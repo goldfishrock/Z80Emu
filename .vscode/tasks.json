@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Z80Emu (WSL g++)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "mkdir -p build && g++ -std=c++20 -g -O0 -Wall -Wextra -Wpedantic -I include src/main.cpp src/Bus.cpp -o build/Z80Emu"
+      ],
+      "problemMatcher": ["$gcc"],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Build tests (WSL g++)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "mkdir -p build && g++ -std=c++20 -g -O0 -Wall -Wextra -Wpedantic -I include tests/test_bus.cpp src/Bus.cpp -o build/test_bus && g++ -std=c++20 -g -O0 -Wall -Wextra -Wpedantic -I include tests/test_z80_fetch.cpp src/Bus.cpp src/Z80.cpp -o build/test_z80_fetch"
+      ],
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "./build/test_bus && ./build/test_z80_fetch"
+      ],
+      "dependsOn": ["Build tests (WSL g++)"],
+      "problemMatcher": []
+    }
+  ]
+}

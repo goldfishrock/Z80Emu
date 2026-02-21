@@ -1,0 +1,24 @@
+# Build folders
+out/
+build/
+CMakeFiles/
+CMakeCache.txt
+
+# Visual Studio
+.vs/
+*.VC.db
+*.VC.opendb
+
+# CMake
+cmake-build-*/
+
+# Binaries
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.dll
+*.lib
+
+# OS
+Thumbs.db
