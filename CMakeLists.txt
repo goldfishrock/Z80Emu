@@ -18,8 +18,7 @@ FetchContent_MakeAvailable(Catch2)
 # ---- Core library (shared by app + tests) ----
 add_library(z80core
     src/Bus.cpp
-    src/Cpu.cpp
-)
+    src/Cpu.cpp)
 
 target_include_directories(z80core
     PUBLIC
@@ -30,20 +29,22 @@ target_compile_features(z80core PUBLIC cxx_std_20)
 
 # ---- Main app ----
 add_executable(Z80Emu
-    src/main.cpp
-)
+    src/main.cpp)
 
 target_link_libraries(Z80Emu PRIVATE z80core)
 
 # ---- Tests ----
 enable_testing()
 
+
 add_executable(z80_tests
     tests/test_bus.cpp
     tests/test_cpu.cpp
-)
+    tests/test_op_codes.cpp)
 
 target_link_libraries(z80_tests PRIVATE Catch2::Catch2WithMain z80core)
+target_compile_definitions(z80_tests PRIVATE CATCH_CONFIG_COLOUR_ANSI)
+set(CTEST_OUTPUT_ON_FAILURE ON)
 
 include(Catch)
 catch_discover_tests(z80_tests)
