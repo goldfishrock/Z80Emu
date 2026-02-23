@@ -21,8 +21,10 @@ TEST_CASE("TEST OP CODE 0x00 :: NOP - Do bugger all!")
     REQUIRE(cpu.pc() == 0x0001);
 }
 
-// *************      LD BC,nn     **************
-TEST_CASE("TEST OP CODE 0x01 :: LD BC,nn - Loads 16-bit immediate into BC")
+// **********************************************
+// *      LD BC,nn   ::   OP CODE: 0x01         *
+// **********************************************
+TEST_CASE("TEST OP CODE 0x01 :: LD BC,nn - Loads 16-bit immediate value (little-endian) into BC")
 {
     Bus bus;
     Cpu cpu;
@@ -41,8 +43,10 @@ TEST_CASE("TEST OP CODE 0x01 :: LD BC,nn - Loads 16-bit immediate into BC")
     REQUIRE(cpu.pc() == 0x0003);
 }
 
-// *************      LD DE,nn     **************
-TEST_CASE("TEST OP CODE 0x11 :: LD DE,nn - Loads 16-bit immediate into DE")
+// **********************************************
+// *      LD DE,nn   ::   OP CODE: 0x11         *
+// **********************************************
+TEST_CASE("TEST OP CODE 0x11 :: LD DE,nn - Loads 16-bit immediate value (little-endian) into DE")
 {
     Bus bus;
     Cpu cpu;
@@ -61,8 +65,10 @@ TEST_CASE("TEST OP CODE 0x11 :: LD DE,nn - Loads 16-bit immediate into DE")
     REQUIRE(cpu.pc() == 0x0003);
 }
 
-// *************      LD HL,nn     **************
-TEST_CASE("TEST OP CODE 0x21 :: LD HL,nn - Loads 16-bit immediate into HL")
+// **********************************************
+// *      LD HL,nn   ::   OP CODE: 0x21         *
+// **********************************************
+TEST_CASE("TEST OP CODE 0x21 :: LD HL,nn - Loads 16-bit immediate value (little-endian) into  HL")
 {
     Bus bus;
     Cpu cpu;
@@ -81,8 +87,10 @@ TEST_CASE("TEST OP CODE 0x21 :: LD HL,nn - Loads 16-bit immediate into HL")
     REQUIRE(cpu.pc() == 0x0003);
 }
 
-// *************      LD SP,nn     **************
-TEST_CASE("TEST OP CODE 0x31 :: LD SP,nn - Loads 16-bit immediate into SP")
+// **********************************************
+// *      LD SP,nn   ::   OP CODE: 0x31         *
+// **********************************************
+TEST_CASE("TEST OP CODE 0x31 :: LD SP,nn - Loads 16-bit immediate value (little-endian) into  SP")
 {
     Bus bus;
     Cpu cpu;
@@ -101,7 +109,9 @@ TEST_CASE("TEST OP CODE 0x31 :: LD SP,nn - Loads 16-bit immediate into SP")
     REQUIRE(cpu.pc() == 0x0003);
 }
 
-// *************      INC BC      ***************
+// **********************************************
+// *       INC BC   ::   OP CODE: 0x03          *
+// **********************************************
 TEST_CASE("TEST OP CODE 0x03 :: INC BC - Increments the BC register")
 {
     Bus bus;
@@ -119,7 +129,9 @@ TEST_CASE("TEST OP CODE 0x03 :: INC BC - Increments the BC register")
     REQUIRE(cpu.pc() == 0x0001);
 }
 
-// *************      INC DE      ***************
+// **********************************************
+// *       INC DE   ::   OP CODE: 0x13          *
+// **********************************************
 TEST_CASE("TEST OP CODE 0x13 INC DE :: Increments the DE register")
 {
     Bus bus;
@@ -137,7 +149,9 @@ TEST_CASE("TEST OP CODE 0x13 INC DE :: Increments the DE register")
     REQUIRE(cpu.pc() == 0x0001);
 }
 
-// *************      INC HL      ***************
+// **********************************************
+// *       INC HL   ::   OP CODE: 0x23          *
+// **********************************************
 TEST_CASE("TEST OP CODE 0x23 :: INC HL - Increments the HL register")
 {
     Bus bus;
@@ -155,7 +169,9 @@ TEST_CASE("TEST OP CODE 0x23 :: INC HL - Increments the HL register")
     REQUIRE(cpu.pc() == 0x0001);
 }
 
-// *************      DEC BC      ***************
+// **********************************************
+// *       DEC BC   ::   OP CODE: 0x0B          *
+// **********************************************
 TEST_CASE("TEST OP CODE 0x0B :: DEC BC - Decrements the BC register")
 {
     Bus bus;
@@ -173,7 +189,9 @@ TEST_CASE("TEST OP CODE 0x0B :: DEC BC - Decrements the BC register")
     REQUIRE(cpu.pc() == 0x0001);
 }
 
-// *************      DEC DE      ***************
+// **********************************************
+// *       DEC DE   ::   OP CODE: 0x1B          *
+// **********************************************
 TEST_CASE("TEST OP CODE 0x1B :: DEC DE - Decrements the DE register")
 {
     Bus bus;
@@ -191,7 +209,9 @@ TEST_CASE("TEST OP CODE 0x1B :: DEC DE - Decrements the DE register")
     REQUIRE(cpu.pc() == 0x0001);
 }
 
-// *************      DEC HL      ***************
+// **********************************************
+// *       DEC HL   ::   OP CODE: 0x2B          *
+// **********************************************
 TEST_CASE("TEST OP CODE 0x2B :: DEC HL - Decrements the HL register")
 {
     Bus bus;
@@ -207,4 +227,173 @@ TEST_CASE("TEST OP CODE 0x2B :: DEC HL - Decrements the HL register")
 
     REQUIRE(cpu.hl() == 0xEEEE);
     REQUIRE(cpu.pc() == 0x0001);
+}
+
+// **********************************************
+// *       LD A,nn   ::   OP CODE: 0x3E         *
+// **********************************************
+TEST_CASE("LD A,n loads immediate into A and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x3E); // LD A,n
+    bus.write(0x0001, 0x56); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.a() == 0x56);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD B,nn   ::   OP CODE: 0x06         *
+// **********************************************
+TEST_CASE("LD B,n loads immediate into B and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x06); // LD B,n
+    bus.write(0x0001, 0x33); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.b() == 0x33);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD C,nn   ::   OP CODE: 0x0E         *
+// **********************************************
+TEST_CASE("LD C,n loads immediate into C and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x0E); // LD C,n
+    bus.write(0x0001, 0x88); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.c() == 0x88);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD D,nn   ::   OP CODE: 0x16         *
+// **********************************************
+TEST_CASE("LD D,n loads immediate into D and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x16); // LD D,n
+    bus.write(0x0001, 0x77); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.d() == 0x77);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD E,nn   ::   OP CODE: 0x1E         *
+// **********************************************
+TEST_CASE("LD E,n loads immediate into E and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x1E); // LD E,n
+    bus.write(0x0001, 0x33); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.e() == 0x33);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD H,nn   ::   OP CODE: 0x26         *
+// **********************************************
+TEST_CASE("LD H,n loads immediate into H and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x26); // LD E,n
+    bus.write(0x0001, 0x22); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.h() == 0x22);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD L,nn   ::   OP CODE: 0x2E         *
+// **********************************************
+TEST_CASE("LD L,n loads immediate into L and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x2E); // LD L,n
+    bus.write(0x0001, 0x22); // n
+
+    cpu.step();
+
+    REQUIRE(cpu.l() == 0x22);
+    REQUIRE(cpu.pc() == 0x0002);
+    REQUIRE(cpu.f() == f_before);
+}
+
+// **********************************************
+// *       LD A,B   ::   OP CODE: 0x78          *
+// **********************************************
+TEST_CASE("LD A,B loads contents of B into A and advances PC") {
+    Bus bus;
+    Cpu cpu;
+    cpu.connect(&bus);
+    cpu.reset(0x0000);
+
+    cpu.setA(0x00);
+    cpu.setB(0x42);
+    cpu.setF(0xA5);
+    const auto f_before = cpu.f();
+
+    bus.write(0x0000, 0x78); // LD A,B
+    cpu.step();
+
+    REQUIRE(cpu.a() == 0x42);
+    REQUIRE(cpu.pc() == 0x0001);
+    REQUIRE(cpu.f() == 0xA5);
 }
