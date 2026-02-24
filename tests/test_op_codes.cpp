@@ -2,18 +2,25 @@
 #include "Cpu.h"
 #include "Bus.h"
 
+struct CpuFixture
+{
+    Bus bus;
+    Cpu cpu;
+
+    CpuFixture()
+    {
+        cpu.connect(&bus);
+        cpu.reset();
+    }
+};
+
 // **********************************************
 // *              TEST OP CODES                 *
 // **********************************************
 
 // ************* NOP - No Operation *************
-TEST_CASE("TEST OP CODE 0x00 :: NOP - Do bugger all!")
+TEST_CASE_METHOD(CpuFixture, "TEST OP CODE 0x00 :: NOP - Do bugger all!")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    
     // Write 0 to the Memory
     bus.write(0x0000, 0x00);
     cpu.reset();                            // PC = 0x0000
@@ -24,14 +31,8 @@ TEST_CASE("TEST OP CODE 0x00 :: NOP - Do bugger all!")
 // **********************************************
 // *      LD BC,nn   ::   OP CODE: 0x01         *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x01 :: LD BC,nn - Loads 16-bit immediate value (little-endian) into BC")
+TEST_CASE_METHOD(CpuFixture, "TEST OP CODE 0x01 :: LD BC,nn - Loads 16-bit immediate value (little-endian) into BC")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x01, then nn little-endian: 0x34 0x12 => 0x1234
     bus.write(0x0000, 0x01);
     bus.write(0x0001, 0x34);
@@ -46,14 +47,8 @@ TEST_CASE("TEST OP CODE 0x01 :: LD BC,nn - Loads 16-bit immediate value (little-
 // **********************************************
 // *      LD DE,nn   ::   OP CODE: 0x11         *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x11 :: LD DE,nn - Loads 16-bit immediate value (little-endian) into DE")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x11 :: LD DE,nn - Loads 16-bit immediate value (little-endian) into DE")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x11, then nn little-endian: 0x78 0x56 => 0x5678
     bus.write(0x0000, 0x11);
     bus.write(0x0001, 0x78);
@@ -68,14 +63,8 @@ TEST_CASE("TEST OP CODE 0x11 :: LD DE,nn - Loads 16-bit immediate value (little-
 // **********************************************
 // *      LD HL,nn   ::   OP CODE: 0x21         *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x21 :: LD HL,nn - Loads 16-bit immediate value (little-endian) into  HL")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x21 :: LD HL,nn - Loads 16-bit immediate value (little-endian) into  HL")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x21, then nn little-endian: 0xBC 0x9A => 0x9ABC
     bus.write(0x0000, 0x21);
     bus.write(0x0001, 0xBC);
@@ -90,14 +79,8 @@ TEST_CASE("TEST OP CODE 0x21 :: LD HL,nn - Loads 16-bit immediate value (little-
 // **********************************************
 // *      LD SP,nn   ::   OP CODE: 0x31         *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x31 :: LD SP,nn - Loads 16-bit immediate value (little-endian) into  SP")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x31 :: LD SP,nn - Loads 16-bit immediate value (little-endian) into  SP")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x31, then nn little-endian: 0x00 0x80 => 0x8000
     bus.write(0x0000, 0x31);
     bus.write(0x0001, 0x00);
@@ -112,14 +95,8 @@ TEST_CASE("TEST OP CODE 0x31 :: LD SP,nn - Loads 16-bit immediate value (little-
 // **********************************************
 // *       INC BC   ::   OP CODE: 0x03          *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x03 :: INC BC - Increments the BC register")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x03 :: INC BC - Increments the BC register")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
 	// Opcode: 0x03, BC=ABCD initially, then after INC BC, BC should be ABCD + 1 = ABCE
     cpu.setBC(0xABCD);
 	bus.write(0x0000, 0x03); // 0x03 is the opcode for INC BC
@@ -132,14 +109,8 @@ TEST_CASE("TEST OP CODE 0x03 :: INC BC - Increments the BC register")
 // **********************************************
 // *       INC DE   ::   OP CODE: 0x13          *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x13 INC DE :: Increments the DE register")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x13 INC DE :: Increments the DE register")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x13, DE=5656 initially, then after INC DE, DE should be 5656 + 1 = 5657
     cpu.setDE(0x5656);
     bus.write(0x0000, 0x13); // 0x03 is the opcode for INC DE
@@ -152,14 +123,8 @@ TEST_CASE("TEST OP CODE 0x13 INC DE :: Increments the DE register")
 // **********************************************
 // *       INC HL   ::   OP CODE: 0x23          *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x23 :: INC HL - Increments the HL register")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x23 :: INC HL - Increments the HL register")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x23, HL=4321 initially, then after INC HL, HL should be 4321 + 1 = 4322
     cpu.setHL(0x4321);
     bus.write(0x0000, 0x23); // 0x23 is the opcode for INC DE
@@ -172,14 +137,8 @@ TEST_CASE("TEST OP CODE 0x23 :: INC HL - Increments the HL register")
 // **********************************************
 // *       DEC BC   ::   OP CODE: 0x0B          *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x0B :: DEC BC - Decrements the BC register")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x0B :: DEC BC - Decrements the BC register")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x0B, BC=0x2222 initially, then after DEC BC, BC should be 2222 - 1 = 2221
     cpu.setBC(0x2222);
     bus.write(0x0000, 0x0B); // 0x0B is the opcode for DEC BC
@@ -192,14 +151,8 @@ TEST_CASE("TEST OP CODE 0x0B :: DEC BC - Decrements the BC register")
 // **********************************************
 // *       DEC DE   ::   OP CODE: 0x1B          *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x1B :: DEC DE - Decrements the DE register")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x1B :: DEC DE - Decrements the DE register")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x1B, DE=8765 initially, then after DEC DE, DE should be 8765 - 1 = 8764
     cpu.setDE(0x8765);
     bus.write(0x0000, 0x1B); // 0x1B is the opcode for DEC DE
@@ -212,14 +165,8 @@ TEST_CASE("TEST OP CODE 0x1B :: DEC DE - Decrements the DE register")
 // **********************************************
 // *       DEC HL   ::   OP CODE: 0x2B          *
 // **********************************************
-TEST_CASE("TEST OP CODE 0x2B :: DEC HL - Decrements the HL register")
+TEST_CASE_METHOD(CpuFixture,"TEST OP CODE 0x2B :: DEC HL - Decrements the HL register")
 {
-    Bus bus;
-    Cpu cpu;
-
-    cpu.connect(&bus);
-    cpu.reset(); // PC = 0x0000
-
     // Opcode: 0x2B, DE=EEEF initially, then after DEC DE, DE should be EEEF - 1 = EEEE
     cpu.setHL(0xEEEF);
     bus.write(0x0000, 0x2B); // 0x2B is the opcode for DEC HL
@@ -232,12 +179,8 @@ TEST_CASE("TEST OP CODE 0x2B :: DEC HL - Decrements the HL register")
 // **********************************************
 // *       LD A,nn   ::   OP CODE: 0x3E         *
 // **********************************************
-TEST_CASE("LD A,n loads immediate into A and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD A,n loads immediate into A and advances PC")
+{
     const auto f_before = cpu.f();
 
     bus.write(0x0000, 0x3E); // LD A,n
@@ -253,11 +196,8 @@ TEST_CASE("LD A,n loads immediate into A and advances PC") {
 // **********************************************
 // *       LD B,nn   ::   OP CODE: 0x06         *
 // **********************************************
-TEST_CASE("LD B,n loads immediate into B and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
+TEST_CASE_METHOD(CpuFixture,"LD B,n loads immediate into B and advances PC")
+{
 
     const auto f_before = cpu.f();
 
@@ -274,12 +214,8 @@ TEST_CASE("LD B,n loads immediate into B and advances PC") {
 // **********************************************
 // *       LD C,nn   ::   OP CODE: 0x0E         *
 // **********************************************
-TEST_CASE("LD C,n loads immediate into C and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD C,n loads immediate into C and advances PC")
+{
     const auto f_before = cpu.f();
 
     bus.write(0x0000, 0x0E); // LD C,n
@@ -295,12 +231,8 @@ TEST_CASE("LD C,n loads immediate into C and advances PC") {
 // **********************************************
 // *       LD D,nn   ::   OP CODE: 0x16         *
 // **********************************************
-TEST_CASE("LD D,n loads immediate into D and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD D,n loads immediate into D and advances PC")
+{
     const auto f_before = cpu.f();
 
     bus.write(0x0000, 0x16); // LD D,n
@@ -316,12 +248,8 @@ TEST_CASE("LD D,n loads immediate into D and advances PC") {
 // **********************************************
 // *       LD E,nn   ::   OP CODE: 0x1E         *
 // **********************************************
-TEST_CASE("LD E,n loads immediate into E and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD E,n loads immediate into E and advances PC")
+{
     const auto f_before = cpu.f();
 
     bus.write(0x0000, 0x1E); // LD E,n
@@ -337,12 +265,8 @@ TEST_CASE("LD E,n loads immediate into E and advances PC") {
 // **********************************************
 // *       LD H,nn   ::   OP CODE: 0x26         *
 // **********************************************
-TEST_CASE("LD H,n loads immediate into H and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD H,n loads immediate into H and advances PC")
+{
     const auto f_before = cpu.f();
 
     bus.write(0x0000, 0x26); // LD E,n
@@ -358,12 +282,8 @@ TEST_CASE("LD H,n loads immediate into H and advances PC") {
 // **********************************************
 // *       LD L,nn   ::   OP CODE: 0x2E         *
 // **********************************************
-TEST_CASE("LD L,n loads immediate into L and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD L,n loads immediate into L and advances PC")
+{
     const auto f_before = cpu.f();
 
     bus.write(0x0000, 0x2E); // LD L,n
@@ -379,12 +299,8 @@ TEST_CASE("LD L,n loads immediate into L and advances PC") {
 // **********************************************
 // *       LD A,B   ::   OP CODE: 0x78          *
 // **********************************************
-TEST_CASE("LD A,B loads contents of B into A and advances PC") {
-    Bus bus;
-    Cpu cpu;
-    cpu.connect(&bus);
-    cpu.reset(0x0000);
-
+TEST_CASE_METHOD(CpuFixture,"LD A,B loads contents of B into A and advances PC")
+{
     cpu.setA(0x00);
     cpu.setB(0x42);
     cpu.setF(0xA5);
@@ -396,4 +312,155 @@ TEST_CASE("LD A,B loads contents of B into A and advances PC") {
     REQUIRE(cpu.a() == 0x42);
     REQUIRE(cpu.pc() == 0x0001);
     REQUIRE(cpu.f() == 0xA5);
+}
+
+// **********************************************
+// *       LD r, (HL)   ::   OP CODE: 0x46      *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture,"LD r,(HL) reads from memory at HL", "[cpu][ld]")
+{
+    cpu.setHL(0x4000);
+    bus.write(0x4000, 0xAB);
+
+    // Put opcode at PC=0
+    bus.write(0x0000, 0x46); // LD B,(HL)
+
+    cpu.step();
+
+    REQUIRE(cpu.b() == 0xAB);
+}
+
+// **********************************************
+// *       LD (HL), r   ::   OP CODE: 0x71      *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture,"LD (HL),r writes to memory at HL", "[cpu][ld]")
+{
+    cpu.setHL(0x4000);
+    cpu.setC(0x5E);
+
+    bus.write(0x0000, 0x71); // LD (HL),C
+
+    cpu.step();
+
+    REQUIRE(bus.read(0x4000) == 0x5E);
+}
+
+// **********************************************
+// *   SET HALT STATE   ::   OP CODE: 0x76      *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture,"0x76 sets HALT state (not treated as LD (HL),(HL))", "[cpu][halt]")
+{
+    bus.write(0x0000, 0x76); // HALT
+
+    cpu.step();
+
+    REQUIRE(cpu.isHalted() == true);
+}
+
+// **********************************************
+// *        INC B   ::   OP CODE: 0x04          *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture,"INC B sets flags correctly on overflow 0x7F -> 0x80", "[cpu][inc]")
+{
+    cpu.setB(0x7F);
+    bus.write(0x0000, 0x04); // INC B
+    cpu.step();
+
+    REQUIRE(cpu.b() == 0x80);
+
+    const uint8_t f = cpu.f();
+    REQUIRE((f & 0x80) != 0); // S
+    REQUIRE((f & 0x40) == 0); // Z
+    REQUIRE((f & 0x10) != 0); // H
+    REQUIRE((f & 0x04) != 0); // PV
+    REQUIRE((f & 0x02) == 0); // N
+}
+
+// **********************************************
+// *        DEC B   ::   OP CODE: 0x05          *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture,"DEC B sets flags correctly on overflow 0x80 -> 0x7F", "[cpu][dec]")
+{
+    cpu.setB(0x80);
+    bus.write(0x0000, 0x05); // DEC B
+    cpu.step();
+
+    REQUIRE(cpu.b() == 0x7F);
+
+    const uint8_t f = cpu.f();
+    REQUIRE((f & 0x80) == 0); // S
+    REQUIRE((f & 0x40) == 0); // Z
+    REQUIRE((f & 0x10) != 0); // H
+    REQUIRE((f & 0x04) != 0); // PV
+    REQUIRE((f & 0x02) != 0); // N
+}
+
+// **********************************************
+// *      INC (HL)   ::   OP CODE: 0x34         *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "0x34 :: INC (HL)", "[cpu][inc][mem]")
+{
+    cpu.setHL(0x4000);
+    bus.write(0x4000, 0x0F);
+
+    bus.write(0x0000, 0x34); // INC (HL)
+    cpu.step();
+
+    REQUIRE(bus.read(0x4000) == 0x10);
+    REQUIRE((cpu.f() & 0x10) != 0); // H set
+}
+
+// **********************************************
+// *      DEC (HL)   ::   OP CODE: 0x35         *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "0x35 :: DEC (HL)", "[cpu][dec][mem]")
+{
+    cpu.setHL(0x4000);
+    bus.write(0x4000, 0x00);
+
+    bus.write(0x0000, 0x35); // DEC (HL)
+    cpu.step();
+
+    REQUIRE(bus.read(0x4000) == 0xFF);
+    REQUIRE((cpu.f() & 0x10) != 0); // H set on borrow from bit 4 when low nibble was 0
+    REQUIRE((cpu.f() & 0x02) != 0); // N set
+}
+
+// **********************************************
+// *         INC does not change Carry          *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "INC does not change Carry", "[cpu][inc][flags]")
+{
+    // Set carry using SCF
+    bus.write(0x0000, 0x37); // SCF
+    bus.write(0x0001, 0x04); // INC B
+
+    cpu.setB(0x00);
+
+    cpu.step(); // SCF
+    REQUIRE((cpu.f() & 0x01) != 0); // C set
+
+    cpu.step(); // INC B
+    REQUIRE(cpu.b() == 0x01);
+    REQUIRE((cpu.f() & 0x01) != 0); // C still set
+}
+
+// **********************************************
+// *         DEC does not change Carry          *
+// **********************************************
+
+TEST_CASE_METHOD(CpuFixture, "DEC (HL) does not change Carry", "[cpu][dec][mem][flags]")
+{
+    cpu.setHL(0x4000);
+    bus.write(0x4000, 0x01);
+
+    bus.write(0x0000, 0x37); // SCF
+    bus.write(0x0001, 0x35); // DEC (HL)
+
+    cpu.step(); // SCF
+    REQUIRE((cpu.f() & 0x01) != 0); // C set
+
+    cpu.step(); // DEC (HL)
+    REQUIRE(bus.read(0x4000) == 0x00);
+    REQUIRE((cpu.f() & 0x01) != 0); // C still set
 }

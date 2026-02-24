@@ -12,124 +12,201 @@ The goal is not to rush to a full machine emulator, but to build a solid, extens
 
 ---
 
-## 🎯 Project Philosophy
+# What is Z80Emu
 
-This emulator is built around a few key principles:
+A slightly obsessive, thoroughly geeky, modern (C++20) Z80 emulator.
 
-- **T-states, not Hz** – All timing is cycle-based and deterministic.
-- **No real-time inside the CPU core** – The CPU never sleeps. Scheduling and pacing are external.
-- **Clean bus abstraction** – Memory and I/O are accessed via a bus interface.
-- **Step-first development** – Instruction stepping and tracing come before full-speed execution.
-- **Incremental implementation** – Small opcode sets implemented and verified before expanding.
+This isn’t a “let’s throw something together” emulator. I really wanted to try a proper project approach of a 
+**learn it properly, build it cleanly, test it properly, understand every opcode** kind of emulator.
+
+And yes… it’s being built because the Z80 is awesome.
+
+---
+
+## 🎯 What This Project Is (And Isn’t)
+
+This project is:
+
+- A ground-up Z80 emulator written in modern C++20  
+- Built with CMake  
+- Test-driven using Catch2  
+- Structured to be clean, readable, and extendable  
+- A learning vehicle as much as a functional emulator  
+
+This project is not:
+
+- A copy-paste from an existing emulator  
+- A “good enough” hack  
+- A speed-optimised black box  
+
+The goal is understanding. Every instruction. Every flag. Every tick.
 
 ---
 
 ## 🏗 Architecture Overview
 
+The emulator is deliberately split into simple, clear layers.
+
 ### CPU Core
-- 8-bit and 16-bit register model (AF, BC, DE, HL, SP, PC)
-- Flag handling (S, Z, H, P/V, N, C)
-- `step_instruction()` returns T-states consumed
-- `run_for_tstates(budget)` executes until T-state budget exhausted
-- HALT support (interrupt behaviour stubbed for now)
-- Interrupt placeholders (IFF1/IFF2, IM, NMI line)
 
-### Bus Layer
-- 64KB RAM implementation
-- Memory read/write callbacks
-- I/O read/write stubs (expandable later)
+The CPU class handles:
 
-### Execution Model
-- Deterministic execution
-- Single-instruction stepping
-- Cycle-budget execution
-- Breakpoint support
-- Optional trace hook per instruction
+- Registers (8-bit and 16-bit)
+- Flags
+- Instruction decode
+- Execution logic
+- PC/SP behaviour
+- T-states (eventually fully accurate)
+
+The aim is clarity over cleverness.  
+If something looks “too magic”, it probably gets rewritten.
 
 ---
 
-## ✅ Currently Implemented Instructions
+### Bus Layer
 
-Minimal bootstrap set:
+The bus abstracts memory and I/O access.
 
-- `NOP`
-- `HALT`
-- `LD r,n`
-- `LD (nn),A`
-- `LD A,(nn)`
-- `JP nn`
-- `JR e`
-- `INC r`
-- `DEC r`
-- `XOR A` (optional)
+This keeps the CPU independent from:
 
-This is enough to execute simple loop programs and validate flags and timing behaviour.
+- RAM layout
+- ROM layout
+- Future memory-mapped devices
+- IO port implementations
+
+It also makes testing easier — which is important because we’re doing this properly!!!
+
+---
+
+### Execution Model
+
+The model is simple and explicit:
+
+1. Fetch opcode
+2. Decode
+3. Execute
+4. Advance PC
+5. Update timing
+
+No hidden tricks. No macro madness.  
+Just readable, testable execution flow.
+
+---
+
+## ✅ Currently Implemented
+
+The instruction set is being implemented incrementally and tested as we go.
+
+Implemented so far (as of 24/02/26):
+
+- NOP
+- LD r,r
+- Basic register operations
+- PC handling
+- SP handling
+- Core fetch helpers
+
+Each instruction is added with tests passing fully before moving on.
+
+Green tests = sleep at night.
 
 ---
 
 ## 🧪 Test Program
 
-The emulator loads a small hardcoded test program at `0x8000` which:
+The project includes unit tests (Catch2) covering:
 
-- Initializes a memory location
-- Increments it in a loop
-- Demonstrates memory access, flag updates, and relative jumps
+- Register behaviour
+- PC increment logic
+- SP operations
+- Instruction decoding
+- Execution correctness
 
-You can step through execution interactively via the built-in monitor.
+If something breaks, it should break loudly.
+
+This emulator grows under test protection.
 
 ---
 
 ## 🖥 Build Instructions (Windows / MSYS2 UCRT64)
 
-Compiler:
-```
-C:\msys64\ucrt64\bin\g++.exe
+This project builds cleanly using:
+
+- CMake
+- MSYS2 (UCRT64 environment)
+- A modern C++20 compiler
+
+Typical build flow:
+
+```bash
+cmake -S . -B out/build
+cmake --build out/build
+ctest --test-dir out/build
 ```
 
-Build:
-```
-g++ -std=c++20 -g -Iinclude src/main.cpp src/Bus.cpp src/Z80.cpp -o build/Z80Emu.exe
-```
-
-Or use the provided VS Code tasks configuration.
+If all goes well, you’ll see a nice wall of passing tests.  
+If not… that’s why we have tests.
 
 ---
 
 ## 🗺 Roadmap
 
-Planned milestones:
+Planned work (in roughly sensible order):
 
-- [ ] Expand opcode coverage
-- [ ] Official Z80 validation test suite
-- [ ] Full interrupt model (IM 0/1/2)
-- [ ] I/O port device system
-- [ ] Scheduler layer (real-time pacing)
-- [ ] Frame-based execution model
-- [ ] Optional machine targets (ZX Spectrum? CP/M system?)
+- Complete 8-bit load group
+- 16-bit load group
+- Arithmetic & flag accuracy
+- Stack operations
+- Jumps / Calls / Returns
+- Interrupt handling
+- Timing refinement
+- Possibly memory-mapped devices
+
+Eventually:
+
+- Enough correctness to run real Z80 programs
+- Maybe CP/M
+- Maybe something a bit more ambitious
+
+One step at a time.
 
 ---
 
 ## 📓 Development Journal
 
-This project is being documented as a learning journal.  
-Each session records:
+This project is being developed incrementally, with small commits and proper branching (mostly).
 
-- Goal
-- Changes made
-- Lessons learned
-- Tests run
-- Next step
+Each session usually focuses on:
+
+- One instruction group
+- One architectural refinement
+- Or one testing improvement
+
+The idea is steady progress, not huge heroic rewrites.
 
 ---
 
 ## 🚀 Why?
 
-Because writing an emulator is one of the best ways to deeply understand:
+Because writing an emulator is one of the best ways to truly understand:
 
 - CPU architecture
 - Binary execution
 - Timing models
-- Hardware abstraction
-- Clean software architecture
+- Instruction decoding
+- Clean software design
 
-And because the Z80 deserves it. This year sees its 50th Birthday and despite its age it's still a powerhouse of a CPU..... and I love it! 😍
+And because the Z80 deserves it.
+
+It turned 50 this year and it’s still everywhere — embedded systems, retro machines, radio gear, industrial hardware.
+
+It’s simple.  
+It’s elegant.  
+It’s brilliant.  
+
+And I love it.
+
+---
+
+If you’re here because you’re building your own emulator — welcome.  
+If you’re here because you love the Z80 — even better.

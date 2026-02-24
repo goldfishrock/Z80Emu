@@ -15,11 +15,20 @@ void Cpu::reset()
 {
 	pc_ = 0x0000;
     sp_ = 0xFFFF;
+	halted_ = false;
 }
 
 bool Cpu::isConnected() const
 {
     return bus_ != nullptr;
+}
+
+void Cpu::setFlag(uint8_t mask, bool on)
+{
+	std::uint8_t flags = f();
+	if (on) flags |= mask;
+	else    flags = static_cast<std::uint8_t>(flags & static_cast<std::uint8_t>(~mask));
+	setF(flags);
 }
 
 std::uint8_t Cpu::popByte()
@@ -141,18 +150,111 @@ void Cpu::loadImm8(void (Cpu::* setter)(uint8_t))
     (this->*setter)(fetchByte());
 }
 
+void Cpu::execScf()
+{
+	// C=1, N=0, H=0. Everything else unchanged.
+	setFlag(FLAG_C, true);
+	setFlag(FLAG_N, false);
+	setFlag(FLAG_H, false);
+}
+
+void Cpu::execIncReg(uint8_t opcode)
+{
+	const uint8_t r = (opcode >> 3) & 0x07;
+
+	if (r == 6)
+	{
+		// INC (HL)
+		const std::uint16_t addr = hl_;                 // since we store hl_ directly
+		const std::uint8_t  v = bus_->read(addr);
+		const std::uint8_t  res = inc8(v);
+		bus_->write(addr, res);
+		return;
+	}
+
+	const std::uint8_t v = (this->*reg8Get[r])();
+	(this->*reg8Set[r])(inc8(v));
+}
+
+void Cpu::execDecReg(uint8_t opcode)
+{
+	const std::uint8_t r = (opcode >> 3) & 0x07;
+
+	if (r == 6)
+	{
+		// DEC (HL)
+		const std::uint16_t addr = hl_;
+		const std::uint8_t  v = bus_->read(addr);
+		const std::uint8_t  res = dec8(v);
+		bus_->write(addr, res);
+		return;
+	}
+
+	const std::uint8_t v = (this->*reg8Get[r])();
+	(this->*reg8Set[r])(dec8(v));
+}
+
+uint8_t Cpu::inc8(uint8_t v)
+{
+	const uint8_t r = static_cast<uint8_t>(v + 1);
+
+	setFlag(FLAG_S, (r & 0x80) != 0);
+	setFlag(FLAG_Z, r == 0);
+	setFlag(FLAG_H, (v & 0x0F) == 0x0F);
+	setFlag(FLAG_PV, v == 0x7F);     // +127 -> -128 overflow
+	setFlag(FLAG_N, false);         // INC resets N
+	// C unchanged
+
+	return r;
+}
+
+uint8_t Cpu::dec8(uint8_t v)
+{
+	const uint8_t r = static_cast<uint8_t>(v - 1);
+
+	setFlag(FLAG_S, (r & 0x80) != 0);
+	setFlag(FLAG_Z, r == 0);
+	setFlag(FLAG_H, (v & 0x0F) == 0x00);
+	setFlag(FLAG_PV, v == 0x80);     // -128 -> +127 overflow
+	setFlag(FLAG_N, true);          // DEC sets N
+	// C unchanged
+
+	return r;
+}
+
 void Cpu::execLdRegReg(uint8_t opcode)
 {
     const uint8_t dst = (opcode >> 3) & 0x07;
     const uint8_t src = opcode & 0x07;
 
-    // Skip (HL) for now
-    if (dst == 6 || src == 6)
-        return; // we'll implement later with memory reads/writes
+	// 0x76 is HALT (LD (HL),(HL) doesn't exist)
+	if (dst == 6 && src == 6)
+	{
+		halted_ = true;
+		return;
+	}
 
-    const uint8_t value = (this->*reg8Get[src])();
-    (this->*reg8Set[dst])(value);
-	const uint8_t xxxx = 0xA;
+	const uint16_t hl = hl_; // or however you read HL
+
+	// LD r, (HL)
+	if (src == 6)
+	{
+		const uint8_t value = bus_->read(hl);     // adjust member name if needed
+		(this->*reg8Set[dst])(value);
+		return;
+	}
+
+	// LD (HL), r
+	if (dst == 6)
+	{
+		const uint8_t value = (this->*reg8Get[src])();
+		bus_->write(hl, value);                   // adjust member name if needed
+		return;
+	}
+
+	// LD r, r
+	const uint8_t value = (this->*reg8Get[src])();
+	(this->*reg8Set[dst])(value);
 }
 
 void Cpu::step()
@@ -161,7 +263,7 @@ void Cpu::step()
 
     // LD r,r' block (0x40–0x7F except 0x76 (HALT))
 	// Used to cover the 49 'ld r,r' instructions.
-    if (opcode >= 0x40 && opcode <= 0x7F && opcode != 0x76)
+    if (opcode >= 0x40 && opcode <= 0x7F || opcode == 0x76)
     {
         execLdRegReg(opcode);
         return;
@@ -234,17 +336,31 @@ void Cpu::step()
 	        loadImm8(&Cpu::setD);
 	        break;
 
-	    case 0x1E:                      // LD D,n
+	    case 0x1E:                      // LD E,n
 	        loadImm8(&Cpu::setE);
 	        break;
 
-	    case 0x26:                      // LD D,n
+	    case 0x26:                      // LD H,n
 	        loadImm8(&Cpu::setH);
 	        break;
 
-	    case 0x2E:                      // LD D,n
+	    case 0x2E:                      // LD L,n
 	        loadImm8(&Cpu::setL);
 	        break;
+			
+		case 0x04: case 0x0C: case 0x14: case 0x1C:	// INC r (including (HL))
+		case 0x24: case 0x2C: case 0x34: case 0x3C:
+			execIncReg(opcode);
+			break;
+
+		case 0x05: case 0x0D: case 0x15: case 0x1D:	// DEC r (including (HL))
+		case 0x25: case 0x2D: case 0x35: case 0x3D:
+			execDecReg(opcode);
+			break;
+
+		case 0x37:						// SCF
+			execScf();
+			break;
 
 	    default:
 	        // TODO :: For now, do nothing (we’ll tighten this later)
