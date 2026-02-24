@@ -12,12 +12,12 @@ The goal is not to rush to a full machine emulator, but to build a solid, extens
 
 ---
 
-# What is Z80Emu
+# What is Z80Emu?
 
-A slightly obsessive, thoroughly geeky, modern (C++20) Z80 emulator.
+A slightly obsessive, thoroughly geeky, modern C++20 Z80 emulator.
 
-This isn’t a “let’s throw something together” emulator. I really wanted to try a proper project approach of a 
-**learn it properly, build it cleanly, test it properly, understand every opcode** kind of emulator.
+This isn’t a “let’s throw something together” emulator.  
+It’s a **learn it properly, build it cleanly, test it properly, understand every opcode** kind of emulator.
 
 And yes… it’s being built because the Z80 is awesome.
 
@@ -39,7 +39,7 @@ This project is not:
 - A “good enough” hack  
 - A speed-optimised black box  
 
-The goal is understanding. Every instruction. Every flag. Every tick.
+The goal here is understanding. Every instruction. Every flag. Every tick.
 
 ---
 
@@ -51,12 +51,11 @@ The emulator is deliberately split into simple, clear layers.
 
 The CPU class handles:
 
-- Registers (8-bit and 16-bit)
-- Flags
-- Instruction decode
-- Execution logic
-- PC/SP behaviour
-- T-states (eventually fully accurate)
+- 8-bit and 16-bit register pairs (AF, BC, DE, HL)
+- Flag manipulation via helper functions
+- Instruction decoding via switch dispatch
+- Opcode family grouping (e.g. `LD r,r`, `INC r`, `DEC r`)
+- Clean helper functions for arithmetic (`inc8`, `dec8`, etc.)
 
 The aim is clarity over cleverness.  
 If something looks “too magic”, it probably gets rewritten.
@@ -65,78 +64,107 @@ If something looks “too magic”, it probably gets rewritten.
 
 ### Bus Layer
 
-The bus abstracts memory and I/O access.
+The bus abstracts memory access.
 
-This keeps the CPU independent from:
+The CPU connects to the bus and performs:
 
-- RAM layout
-- ROM layout
-- Future memory-mapped devices
-- IO port implementations
+- Instruction fetch
+- Memory reads
+- Memory writes
 
-It also makes testing easier — which is important because we’re doing this properly!!!
+This separation makes unit testing clean and predictable.
 
 ---
 
 ### Execution Model
 
-The model is simple and explicit:
+Each step:
 
-1. Fetch opcode
-2. Decode
-3. Execute
-4. Advance PC
-5. Update timing
+1. Fetch opcode from memory (PC)
+2. Decode via switch statement
+3. Execute instruction
+4. Update PC
+5. Update flags as required
 
-No hidden tricks. No macro madness.  
-Just readable, testable execution flow.
-
----
-
-## ✅ Currently Implemented
-
-The instruction set is being implemented incrementally and tested as we go.
-
-Implemented so far (as of 24/02/26):
-
-- NOP
-- LD r,r
-- Basic register operations
-- PC handling
-- SP handling
-- Core fetch helpers
-
-Each instruction is added with tests passing fully before moving on.
-
-Green tests = sleep at night.
+No macro trickery. No hidden state mutation.
 
 ---
 
-## 🧪 Test Program
+## ✅ Currently Implemented Instructions
 
-The project includes unit tests (Catch2) covering:
+### Core
 
-- Register behaviour
-- PC increment logic
-- SP operations
-- Instruction decoding
-- Execution correctness
+- `NOP`
+- `LD BC,nn`
+- `LD r,r` (including `(HL)` variants)
+- Proper `HALT` handling (0x76)
 
-If something breaks, it should break loudly.
+### 8-bit Increment / Decrement Group
 
-This emulator grows under test protection.
+Fully implemented:
+
+- `INC r`
+- `DEC r`
+- `INC (HL)`
+- `DEC (HL)`
+
+All registers supported:
+
+- A, B, C, D, E, H, L
+- Memory via `(HL)`
+
+### Flag Behaviour (Z80-accurate)
+
+For `INC/DEC`:
+
+- S, Z, H, P/V updated correctly
+- N set/reset appropriately
+- **Carry remains unchanged**
+- Overflow cases handled correctly (0x7F → 0x80, 0x80 → 0x7F)
+
+### Flag Instructions
+
+- `SCF` (Set Carry Flag)
+
+---
+
+## 🧪 Testing Strategy
+
+The project uses Catch2 with a dedicated test fixture:
+
+```cpp
+struct CpuFixture
+{
+    Bus bus;
+    Cpu cpu;
+
+    CpuFixture()
+    {
+        cpu.connect(&bus);
+        cpu.reset();
+    }
+};
+```
+
+This removes boilerplate from every test and ensures:
+
+- Fresh CPU per test
+- Deterministic state
+- Clean, readable test cases
+
+Tests currently verify:
+
+- Register operations
+- Memory-based operations `(HL)`
+- Overflow behaviour
+- Flag correctness
+- Carry preservation
+
+Everything is green.
 
 ---
 
 ## 🖥 Build Instructions (Windows / MSYS2 UCRT64)
-
-This project builds cleanly using:
-
-- CMake
-- MSYS2 (UCRT64 environment)
-- A modern C++20 compiler
-
-Typical build flow:
 
 ```bash
 cmake -S . -B out/build
@@ -151,38 +179,37 @@ If not… that’s why we have tests.
 
 ## 🗺 Roadmap
 
-Planned work (in roughly sensible order):
+Next logical instruction groups:
 
-- Complete 8-bit load group
-- 16-bit load group
-- Arithmetic & flag accuracy
+- CCF (Complement Carry)
+- ADD A,r
+- ADD A,(HL)
+- 16-bit arithmetic
 - Stack operations
 - Jumps / Calls / Returns
 - Interrupt handling
 - Timing refinement
-- Possibly memory-mapped devices
 
 Eventually:
 
-- Enough correctness to run real Z80 programs
-- Maybe CP/M
-- Maybe something a bit more ambitious
-
-One step at a time.
+- Real program execution
+- CP/M experiments
+- Something mildly ridiculous
 
 ---
 
-## 📓 Development Journal
+## 📓 Development Philosophy
 
-This project is being developed incrementally, with small commits and proper branching (mostly).
+This emulator grows incrementally.
 
-Each session usually focuses on:
+Each session:
 
 - One instruction group
-- One architectural refinement
-- Or one testing improvement
+- Full flag correctness
+- Tests first
+- Everything green before moving on
 
-The idea is steady progress, not huge heroic rewrites.
+No rushed megacomits. No “we’ll fix flags later”.
 
 ---
 
@@ -190,23 +217,20 @@ The idea is steady progress, not huge heroic rewrites.
 
 Because writing an emulator is one of the best ways to truly understand:
 
-- CPU architecture
-- Binary execution
-- Timing models
-- Instruction decoding
-- Clean software design
+- CPU architecture  
+- Binary execution  
+- Instruction decoding  
+- Timing behaviour  
+- Clean software structure  
 
 And because the Z80 deserves it.
 
-It turned 50 this year and it’s still everywhere — embedded systems, retro machines, radio gear, industrial hardware.
-
-It’s simple.  
-It’s elegant.  
-It’s brilliant.  
-
-And I love it.
+......It’s 50 years old.  
+......It’s elegant.  
+......It’s still everywhere.
+......And it’s a joy to implement properly.
 
 ---
 
-If you’re here because you’re building your own emulator — welcome.  
-If you’re here because you love the Z80 — even better.
+If you're building your own emulator — welcome.  
+If you love the Z80 — even better.
