@@ -10,8 +10,8 @@ public:
 
     Bus();
 
-    std::uint8_t read(uint16_t address) const;
-    void write(uint16_t address, uint8_t value);
+    std::uint8_t Read(uint16_t address) const;
+    void Write(uint16_t address, uint8_t value);
 
 private:
     std::array<uint8_t, RAM_SIZE> ram_;

@@ -9,18 +9,18 @@ class Z80
 public:
     explicit Z80(Bus& bus);
 
-    void reset();
+    void Reset();
 
     // For now: fetch 1 byte at PC and advance PC.
     // Returns the fetched byte (not executing yet).
-    std::uint8_t fetch8();
+    std::uint8_t Fetch8();
 
     // Register access (keep it simple for now)
-    std::uint16_t pc() const { return PC; }
-    std::uint16_t sp() const { return SP; }
+    std::uint16_t Pc() const { return PC; }
+    std::uint16_t Sp() const { return SP; }
 
-    void set_pc(uint16_t v) { PC = v; }
-    void set_sp(uint16_t v) { SP = v; }
+    void SetPc(uint16_t v) { PC = v; }
+    void SetSp(uint16_t v) { SP = v; }
 
 private:
     Bus& bus_;

@@ -1,370 +1,250 @@
 #include "Cpu.h"
 #include "Bus.h"
 
-void Cpu::connect(Bus* bus)
+void Cpu::Connect(Bus* bus)
 {
     bus_ = bus;
 }
 
-void Cpu::reset(uint16_t pc)
+void Cpu::Reset(uint16_t pc)
 {
     pc_ = pc;
 }
 
-void Cpu::reset()
+void Cpu::Reset()
 {
 	pc_ = 0x0000;
     sp_ = 0xFFFF;
 	halted_ = false;
 }
 
-bool Cpu::isConnected() const
+bool Cpu::is_connected() const
 {
     return bus_ != nullptr;
 }
 
-void Cpu::setFlag(uint8_t mask, bool on)
+std::uint8_t Cpu::GetA() const
 {
-	std::uint8_t flags = f();
-	if (on) flags |= mask;
-	else    flags = static_cast<std::uint8_t>(flags & static_cast<std::uint8_t>(~mask));
-	setF(flags);
+	return static_cast<std::uint8_t>(af_ >> 8);
 }
 
-std::uint8_t Cpu::popByte()
+std::uint8_t Cpu::GetB() const
 {
-    const auto value = bus_->read(sp_);
+	return static_cast<std::uint8_t>(bc_ >> 8);
+}
+
+std::uint8_t Cpu::GetC() const
+{
+	return static_cast<std::uint8_t>(bc_);
+}
+
+std::uint8_t Cpu::GetD() const
+{
+	return static_cast<std::uint8_t>(de_ >> 8);
+}
+
+std::uint8_t Cpu::GetE() const
+{
+	return static_cast<std::uint8_t>(de_);
+}
+
+std::uint8_t Cpu::GetF() const
+{
+	return static_cast<std::uint8_t>(af_ & 0x00FF);
+}
+
+std::uint8_t Cpu::GetH() const
+{
+	return static_cast<std::uint8_t>(hl_ >> 8);
+}
+
+std::uint8_t Cpu::GetL() const
+{
+	return static_cast<std::uint8_t>(hl_);
+}
+
+void Cpu::SetA(std::uint8_t value)
+{
+	af_ = (af_ & 0x00FFu) | (uint16_t(value) << 8);
+}
+
+void Cpu::SetB(std::uint8_t value)
+{
+	bc_ = (bc_ & 0x00FFu) | (uint16_t(value) << 8);
+}
+
+void Cpu::SetC(std::uint8_t value)
+{
+	bc_ = (bc_ & 0xFF00u) | (uint16_t(value));
+}
+
+void Cpu::SetD(std::uint8_t value)
+{
+	de_ = (de_ & 0xFF00u) | (uint16_t(value) << 8);
+}
+
+void Cpu::SetE(std::uint8_t value)
+{
+	de_ = (de_ & 0xFF00u) | (uint16_t(value));
+}
+
+void Cpu::SetF(std::uint8_t value)
+{
+	af_ = static_cast<std::uint16_t>((af_ & 0xFF00) | value);
+}
+
+void Cpu::SetH(std::uint8_t value)
+{
+	hl_ = (hl_ & 0x00FFu) | (uint16_t(value) << 8);
+}
+
+void Cpu::SetL(std::uint8_t value)
+{
+	hl_ = static_cast<std::uint16_t>((hl_ & 0xFF00) | value);
+}
+
+void Cpu::SetFlag(uint8_t mask, bool on)
+{
+	std::uint8_t flags = GetF();
+	if (on) flags |= mask;
+	else    flags = static_cast<std::uint8_t>(flags & static_cast<std::uint8_t>(~mask));
+	SetF(flags);
+}
+
+void Cpu::ExecAddAReg(uint8_t opcode)
+{
+	const uint8_t src = opcode & 0x07;
+
+	// Skip (HL) for now, same rule as your LD r,r
+	if (src == 6)
+		return;
+
+	const uint8_t aVal = GetA();
+	const uint8_t value = (this->*reg8Get[src])();
+
+	const uint16_t sum = static_cast<uint16_t>(aVal) + value;
+	const uint8_t result = static_cast<uint8_t>(sum);
+
+	SetFlagsAdd8(aVal, value, 0, result);
+	SetA(result);
+}
+
+void Cpu::ExecAdcAReg(uint8_t opcode)
+{
+	const uint8_t src = opcode & 0x07;
+
+	// Skip (HL) for now
+	if (src == 6)
+		return;
+
+	const uint8_t lhs = GetA();
+	const uint8_t rhs = (this->*reg8Get[src])();
+
+	const uint8_t carry_in = (GetF() & FLAG_C) ? 1 : 0;
+
+	const uint16_t sum = static_cast<uint16_t>(lhs) + rhs + carry_in;
+	const uint8_t result = static_cast<uint8_t>(sum);
+
+	SetFlagsAdd8(lhs, rhs, carry_in, result);
+	SetA(result);
+}
+
+std::uint8_t Cpu::PopByte()
+{
+    const auto value = bus_->Read(sp_);
     ++sp_;
     return value;
 }
 
-void Cpu::pushByte(std::uint8_t value)
+void Cpu::PushByte(std::uint8_t value)
 {
     --sp_;                      // stack grows downward
-    bus_->write(sp_, value);
+    bus_->Write(sp_, value);
 }
 
-std::uint8_t Cpu::fetchByte()
+std::uint8_t Cpu::FetchByte()
 {
     //TODO :: (Decide how to handle “not connected” in a later step.)
-    const auto value = bus_->read(pc_);
+    const auto value = bus_->Read(pc_);
     pc_++;
     return value;
 }
 
-std::uint16_t Cpu::fetchWord()
+std::uint16_t Cpu::FetchWord()
 {
-    const std::uint16_t lo = fetchByte();
-    const std::uint16_t hi = fetchByte();
+    const std::uint16_t lo = FetchByte();
+    const std::uint16_t hi = FetchByte();
     return static_cast<std::uint16_t>((hi << 8) | lo);
 }
 
-
-std::uint8_t Cpu::a() const
+void Cpu::SetFlagsAdd8(uint8_t lhs, uint8_t rhs, uint8_t carryIn, uint8_t result)
 {
-    return static_cast<std::uint8_t>(af_ >> 8);
+	const uint16_t sum = static_cast<uint16_t>(lhs) + rhs + carryIn;
+
+	uint8_t f = 0;
+	if (result & 0x80) f |= FLAG_S;
+	if (result == 0)   f |= FLAG_Z;
+	if (((lhs & 0x0F) + (rhs & 0x0F) + carryIn) > 0x0F) f |= FLAG_H;
+	if ((~(lhs ^ rhs) & (lhs ^ result) & 0x80) != 0)      f |= FLAG_PV;
+	// N=0
+	if (sum > 0xFF) f |= FLAG_C;
+
+	// Save the value to F register
+	SetF(f);
 }
 
-std::uint8_t Cpu::b() const
+void Cpu::SetFlagsSub8(uint8_t lhs, uint8_t rhs, uint8_t carryIn, uint8_t result)
 {
-    return static_cast<std::uint8_t>(bc_ >> 8);
+	const uint16_t subtrahend = static_cast<uint16_t>(rhs) + carryIn;
+
+	uint8_t f = 0;
+	if (result & 0x80) f |= FLAG_S;
+	if (result == 0)   f |= FLAG_Z;
+	if ((lhs & 0x0F) < ((rhs & 0x0F) + carryIn)) f |= FLAG_H;
+	if (((lhs ^ rhs) & (lhs ^ result) & 0x80) != 0) f |= FLAG_PV;
+	f |= FLAG_N;
+
+	if (static_cast<uint16_t>(lhs) < subtrahend) f |= FLAG_C;
+
+	// Save the value to F register
+	SetF(f);
 }
 
-std::uint8_t Cpu::c() const
+void Cpu::ExecLdRegImm16(void (Cpu::* setter)(uint16_t))
 {
-    return static_cast<std::uint8_t>(bc_);
+    (this->*setter)(FetchWord());
 }
 
-std::uint8_t Cpu::d() const
+void Cpu::ExecLdRegImm8(void (Cpu::* setter)(uint8_t))
 {
-    return static_cast<std::uint8_t>(de_ >> 8);
+    (this->*setter)(FetchByte());
 }
 
-std::uint8_t Cpu::e() const
-{
-    return static_cast<std::uint8_t>(de_);
-}
-
-std::uint8_t Cpu::f() const
-{
-    return static_cast<std::uint8_t>(af_ & 0x00FF);
-}
-
-std::uint8_t Cpu::h() const
-{
-    return static_cast<std::uint8_t>(hl_ >> 8);
-}
-
-std::uint8_t Cpu::l() const
-{
-    return static_cast<std::uint8_t>(hl_);
-}
-
-void Cpu::setA(std::uint8_t value)
-{
-    af_ = (af_ & 0x00FFu) | (uint16_t(value) << 8);
-}
-
-void Cpu::setB(std::uint8_t value)
-{
-    bc_ = (bc_ & 0x00FFu) | (uint16_t(value) << 8);
-}
-
-void Cpu::setC(std::uint8_t value)
-{
-    bc_ = (bc_ & 0xFF00u) | (uint16_t(value));
-}
-
-void Cpu::setD(std::uint8_t value)
-{
-    de_ = (de_ & 0xFF00u) | (uint16_t(value) << 8);
-}
-
-void Cpu::setE(std::uint8_t value)
-{
-    de_ = (de_ & 0xFF00u) | (uint16_t(value));
-}
-
-void Cpu::setF(std::uint8_t value)
-{
-    af_ = static_cast<std::uint16_t>((af_ & 0xFF00) | value);
-}
-
-void Cpu::setH(std::uint8_t value)
-{
-    hl_ = (hl_ & 0x00FFu) | (uint16_t(value) << 8);
-}
-
-void Cpu::setL(std::uint8_t value)
-{
-    hl_ = static_cast<std::uint16_t>((hl_ & 0xFF00) | value);
-}
-
-void Cpu::loadImm16(void (Cpu::* setter)(uint16_t))
-{
-    (this->*setter)(fetchWord());
-}
-
-void Cpu::loadImm8(void (Cpu::* setter)(uint8_t))
-{
-    (this->*setter)(fetchByte());
-}
-
-void Cpu::execScf()
-{
-	// C=1, N=0, H=0. Everything else unchanged.
-	setFlag(FLAG_C, true);
-	setFlag(FLAG_N, false);
-	setFlag(FLAG_H, false);
-}
-
-void Cpu::execIncReg(uint8_t opcode)
-{
-	const uint8_t r = (opcode >> 3) & 0x07;
-
-	if (r == 6)
-	{
-		// INC (HL)
-		const std::uint16_t addr = hl_;                 // since we store hl_ directly
-		const std::uint8_t  v = bus_->read(addr);
-		const std::uint8_t  res = inc8(v);
-		bus_->write(addr, res);
-		return;
-	}
-
-	const std::uint8_t v = (this->*reg8Get[r])();
-	(this->*reg8Set[r])(inc8(v));
-}
-
-void Cpu::execDecReg(uint8_t opcode)
-{
-	const std::uint8_t r = (opcode >> 3) & 0x07;
-
-	if (r == 6)
-	{
-		// DEC (HL)
-		const std::uint16_t addr = hl_;
-		const std::uint8_t  v = bus_->read(addr);
-		const std::uint8_t  res = dec8(v);
-		bus_->write(addr, res);
-		return;
-	}
-
-	const std::uint8_t v = (this->*reg8Get[r])();
-	(this->*reg8Set[r])(dec8(v));
-}
-
-uint8_t Cpu::inc8(uint8_t v)
+uint8_t Cpu::Inc8(uint8_t v)
 {
 	const uint8_t r = static_cast<uint8_t>(v + 1);
 
-	setFlag(FLAG_S, (r & 0x80) != 0);
-	setFlag(FLAG_Z, r == 0);
-	setFlag(FLAG_H, (v & 0x0F) == 0x0F);
-	setFlag(FLAG_PV, v == 0x7F);     // +127 -> -128 overflow
-	setFlag(FLAG_N, false);         // INC resets N
+	SetFlag(FLAG_S, (r & 0x80) != 0);
+	SetFlag(FLAG_Z, r == 0);
+	SetFlag(FLAG_H, (v & 0x0F) == 0x0F);
+	SetFlag(FLAG_PV, v == 0x7F);     // +127 -> -128 overflow
+	SetFlag(FLAG_N, false);         // INC resets N
 	// C unchanged
 
 	return r;
 }
 
-uint8_t Cpu::dec8(uint8_t v)
+uint8_t Cpu::Dec8(uint8_t v)
 {
 	const uint8_t r = static_cast<uint8_t>(v - 1);
 
-	setFlag(FLAG_S, (r & 0x80) != 0);
-	setFlag(FLAG_Z, r == 0);
-	setFlag(FLAG_H, (v & 0x0F) == 0x00);
-	setFlag(FLAG_PV, v == 0x80);     // -128 -> +127 overflow
-	setFlag(FLAG_N, true);          // DEC sets N
+	SetFlag(FLAG_S, (r & 0x80) != 0);
+	SetFlag(FLAG_Z, r == 0);
+	SetFlag(FLAG_H, (v & 0x0F) == 0x00);
+	SetFlag(FLAG_PV, v == 0x80);     // -128 -> +127 overflow
+	SetFlag(FLAG_N, true);          // DEC sets N
 	// C unchanged
 
 	return r;
-}
-
-void Cpu::execLdRegReg(uint8_t opcode)
-{
-    const uint8_t dst = (opcode >> 3) & 0x07;
-    const uint8_t src = opcode & 0x07;
-
-	// 0x76 is HALT (LD (HL),(HL) doesn't exist)
-	if (dst == 6 && src == 6)
-	{
-		halted_ = true;
-		return;
-	}
-
-	const uint16_t hl = hl_; // or however you read HL
-
-	// LD r, (HL)
-	if (src == 6)
-	{
-		const uint8_t value = bus_->read(hl);     // adjust member name if needed
-		(this->*reg8Set[dst])(value);
-		return;
-	}
-
-	// LD (HL), r
-	if (dst == 6)
-	{
-		const uint8_t value = (this->*reg8Get[src])();
-		bus_->write(hl, value);                   // adjust member name if needed
-		return;
-	}
-
-	// LD r, r
-	const uint8_t value = (this->*reg8Get[src])();
-	(this->*reg8Set[dst])(value);
-}
-
-void Cpu::step()
-{
-    uint8_t opcode = fetchByte();
-
-    // LD r,r' block (0x40–0x7F except 0x76 (HALT))
-	// Used to cover the 49 'ld r,r' instructions.
-    if (opcode >= 0x40 && opcode <= 0x7F || opcode == 0x76)
-    {
-        execLdRegReg(opcode);
-        return;
-    }
-
-	switch (opcode)
-    {
-	    case 0x01:                      // LD BC,nn
-	        loadImm16(&Cpu::setBC);
-	        break;
-
-	    case 0x11:                      // LD DE,nn
-	        loadImm16(&Cpu::setDE);
-	        break;
-
-	    case 0x21:                      // LD HL,nn
-	        loadImm16(&Cpu::setHL);
-	        break;
-
-	    case 0x31: // LD SP,nn
-	        loadImm16(&Cpu::setSP);     // LD SP,nn
-	        break;						// is a special case since SP doesn't have a corresponding getter like the other registers,
-									    // but we can still use the same ld_rr_nn helper function to fetch the 16-bit immediate value and set SP accordingly.
-
-	    case 0x03:                      // INC BC
-	        setBC(static_cast<std::uint16_t>(bc() + 1));
-	        break;
-
-	    case 0x13:                      // INC DE
-	        setDE(static_cast<std::uint16_t>(de() + 1));
-	        break;
-
-	    case 0x23:                      // INC HL
-	        setHL(static_cast<std::uint16_t>(hl() + 1));
-	        break;
-
-	    case 0x33:                      // INC SP
-	        sp_ = static_cast<std::uint16_t>(sp_ + 1);
-	        break;
-
-	    case 0x0B:                      // DEC BC
-	        setBC(static_cast<std::uint16_t>(bc() - 1));
-	        break;
-
-	    case 0x1B:                      // DEC DE
-	        setDE(static_cast<std::uint16_t>(de() - 1));
-	        break;
-
-	    case 0x2B:                      // DEC HL
-	        setHL(static_cast<std::uint16_t>(hl() - 1));
-	        break;
-
-	    case 0x3B:                      // DEC SP
-	        sp_ = static_cast<std::uint16_t>(sp_ - 1);
-	        break;
-
-	    case 0x3E:                      // LD A,n
-	        loadImm8(&Cpu::setA);
-	        break;
-
-	    case 0x06:                      // LD B,n
-	        loadImm8(&Cpu::setB);
-	        break;
-
-	    case 0x0E:                      // LD C,n
-	        loadImm8(&Cpu::setC);
-	        break;
-
-	    case 0x16:                      // LD D,n
-	        loadImm8(&Cpu::setD);
-	        break;
-
-	    case 0x1E:                      // LD E,n
-	        loadImm8(&Cpu::setE);
-	        break;
-
-	    case 0x26:                      // LD H,n
-	        loadImm8(&Cpu::setH);
-	        break;
-
-	    case 0x2E:                      // LD L,n
-	        loadImm8(&Cpu::setL);
-	        break;
-			
-		case 0x04: case 0x0C: case 0x14: case 0x1C:	// INC r (including (HL))
-		case 0x24: case 0x2C: case 0x34: case 0x3C:
-			execIncReg(opcode);
-			break;
-
-		case 0x05: case 0x0D: case 0x15: case 0x1D:	// DEC r (including (HL))
-		case 0x25: case 0x2D: case 0x35: case 0x3D:
-			execDecReg(opcode);
-			break;
-
-		case 0x37:						// SCF
-			execScf();
-			break;
-
-	    default:
-	        // TODO :: For now, do nothing (we’ll tighten this later)
-	        break;
-    }
 }
 
