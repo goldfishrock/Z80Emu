@@ -240,7 +240,7 @@ This ensures:
 
 Today was the first proper “flags matter” phase.
 
-We already had early INC/DEC work, but it was partial and a bit special-cased.
+I already had completed some early INC/DEC work, but it was partial and a bit special-cased.
 This phase finished the 8-bit INC/DEC family properly and made it scalable.
 
 ## ✅ What landed
@@ -257,7 +257,7 @@ And importantly:
 - `INC (HL)` → `0x34`
 - `DEC (HL)` → `0x35`
 
-So we now support INC/DEC across:
+So it now supports INC/DEC across:
 
 - A, B, C, D, E, H, L
 - and memory via `(HL)`
@@ -265,7 +265,7 @@ So we now support INC/DEC across:
 ### ♻️ Refactor: opcode-family dispatch (no one-off cases)
 
 Instead of keeping `INC B` / `DEC B` as individual switch cases,
-we routed the whole family into shared handlers:
+I routed the whole family into shared handlers:
 
 - `execIncReg(opcode)`
 - `execDecReg(opcode)`
@@ -292,7 +292,7 @@ Added:
 
 - `SCF` (0x37) — Set Carry Flag
 
-This lets us lock down the “carry unchanged” behaviour via tests.
+This lets me lock down the “carry unchanged” behaviour via tests.
 
 ## 🧪 Test cleanup: fixture refactor
 
