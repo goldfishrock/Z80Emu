@@ -108,19 +108,29 @@ Fully implemented:
 - `INC (HL)`
 - `DEC (HL)`
 
-All registers supported:
+All 8-bit registers supported:
 
 - A, B, C, D, E, H, L
 - Memory via `(HL)`
 
-### Flag Behaviour (Z80-accurate)
+Implementation uses opcode-family dispatch (`execIncReg`, `execDecReg`)
+rather than one-off switch cases.
+
+### Flag Behaviour (Z80-accurate for INC/DEC)
 
 For `INC/DEC`:
 
-- S, Z, H, P/V updated correctly
-- N set/reset appropriately
-- **Carry remains unchanged**
-- Overflow cases handled correctly (0x7F → 0x80, 0x80 → 0x7F)
+- S (Sign)
+- Z (Zero)
+- H (Half carry / borrow)
+- P/V (Overflow)
+- N (Set on DEC, reset on INC)
+- **Carry preserved (unchanged)**
+
+Overflow edge cases correctly handled:
+
+- `0x7F → 0x80`
+- `0x80 → 0x7F`
 
 ### Flag Instructions
 
@@ -179,21 +189,40 @@ If not… that’s why we have tests.
 
 ## 🗺 Roadmap
 
-Next logical instruction groups:
+### Next Instruction Groups
 
-- CCF (Complement Carry)
-- ADD A,r
-- ADD A,(HL)
-- 16-bit arithmetic
-- Stack operations
-- Jumps / Calls / Returns
+- `CCF` (Complement Carry)
+- 8-bit arithmetic group:
+  - `ADD A,r`
+  - `ADD A,(HL)`
+  - `ADC A,r`
+  - `SUB r`
+  - `SBC A,r`
+- 16-bit increment/decrement:
+  - `INC rr`
+  - `DEC rr`
+
+### ALU / Flag-Critical Operations
+
+- `AND`
+- `OR`
+- `XOR`
+- `CP`
+- `CPL`
+- `DAA` (inevitable… and slightly terrifying)
+
+### Structural / Accuracy Work
+
+- Proper T-state timing model
 - Interrupt handling
-- Timing refinement
+- Stack operations
+- Jump / Call / Return instructions
 
-Eventually:
+### Longer Term
 
 - Real program execution
 - CP/M experiments
+- Possibly memory-mapped peripherals
 - Something mildly ridiculous
 
 ---

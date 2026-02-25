@@ -236,6 +236,76 @@ This ensures:
 
 ---
 
+# 🧮 Phase 6 – 8-bit Arithmetic Begins (INC/DEC done properly)
+
+Today was the first proper “flags matter” phase.
+
+We already had early INC/DEC work, but it was partial and a bit special-cased.
+This phase finished the 8-bit INC/DEC family properly and made it scalable.
+
+## ✅ What landed
+
+### 🧱 Full INC/DEC family (register + memory)
+
+Implemented the full opcode groups:
+
+- `INC r`  → `04 0C 14 1C 24 2C 3C` (+ now `(HL)` too)
+- `DEC r`  → `05 0D 15 1D 25 2D 3D` (+ now `(HL)` too)
+
+And importantly:
+
+- `INC (HL)` → `0x34`
+- `DEC (HL)` → `0x35`
+
+So we now support INC/DEC across:
+
+- A, B, C, D, E, H, L
+- and memory via `(HL)`
+
+### ♻️ Refactor: opcode-family dispatch (no one-off cases)
+
+Instead of keeping `INC B` / `DEC B` as individual switch cases,
+we routed the whole family into shared handlers:
+
+- `execIncReg(opcode)`
+- `execDecReg(opcode)`
+
+This matches the same “decode-and-dispatch” mindset as the `LD r,r` block.
+
+### 🚩 Flags: correct behaviour (and tests that prove it)
+
+`INC/DEC` now correctly updates:
+
+- **S** (sign)
+- **Z** (zero)
+- **H** (half carry / half borrow)
+- **P/V** (overflow)
+- **N** (INC clears, DEC sets)
+
+And critically:
+
+- **C is unchanged** by INC/DEC (classic Z80 behaviour)
+
+### 🏳️ SCF implemented (because we needed it for real flag testing)
+
+Added:
+
+- `SCF` (0x37) — Set Carry Flag
+
+This lets us lock down the “carry unchanged” behaviour via tests.
+
+## 🧪 Test cleanup: fixture refactor
+
+Every test used to start with:
+
+```cpp
+Bus bus;
+Cpu cpu;
+cpu.connect(&bus);
+cpu.reset();
+
+---
+
 # 🧪 Testing Strategy
 
 Every instruction is tested in isolation.
@@ -273,26 +343,38 @@ Deterministic, Repeatable & Safe.
 
 ## ✅ Implemented
 
+### Core / Flow
 - NOP  
-- LD r,r block  
-- INC r  
-- DEC r  
-- PC increment logic    
-- 🏳️ Flag register implementation (Z, N, H, C)  
-- 🧵 `(HL)` memory case
-- 🧮 16-bit register pairs (BC, DE, HL, SP)  
+- PC fetch/increment discipline  
+- 16-bit register pairs (BC, DE, HL, SP)
+
+### Loads / Data movement
+- LD r,r block (opcode bitfield decode + dynamic member-function dispatch)  
+- `(HL)` memory handling within load/increment paths
+
+### Arithmetic (so far)
+- INC r (all 8-bit regs + `(HL)`)  
+- DEC r (all 8-bit regs + `(HL)`)  
+- SCF (Set Carry Flag)
+
+### Flags
+- Correct behaviour for INC/DEC:
+- S, Z, H, P/V, N updated properly
+- Carry preserved (unchanged) — verified by tests
 
 ## 🏆 Architectural Wins
 
 - 🚫 No switch explosion  
 - 🧮 Bitfield decoding  
 - 🧠 Member-function dispatch  
-- 🧱 Clean separation of concerns  
+- ♻️ Opcode-family handlers (INC/DEC now scalable)
+- 🧪 Catch2 fixture cleanup (less boilerplate, clearer tests)
 
 ## 🛠️ Infrastructure
 
 - Structured CMake build  
-- Catch2 test harness
+- Catch2 test harness  
+- Tests split/organised by instruction groups (continuing trend)
 
 
 ---
