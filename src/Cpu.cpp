@@ -111,6 +111,11 @@ void Cpu::SetFlag(uint8_t mask, bool on)
 	SetF(flags);
 }
 
+uint8_t Cpu::GetFlag(uint8_t mask) const
+{
+	return (GetF() & mask) ? 1 : 0;
+}
+
 void Cpu::ExecAddAReg(uint8_t opcode)
 {
 	const uint8_t src = opcode & 0x07;

@@ -43,7 +43,9 @@ add_executable(z80_tests
     tests/test_cpu.cpp
     tests/test_arithmetic_op_codes.cpp
     tests/test_cpu_load_8bit.cpp
-    tests/test_cpu_inc_dec.cpp)
+    tests/test_cpu_inc_dec.cpp
+    tests/test_cpu_logic_immediate.cpp
+)
 
 target_link_libraries(z80_tests PRIVATE Catch2::Catch2WithMain z80core)
 target_compile_definitions(z80_tests PRIVATE CATCH_CONFIG_COLOUR_ANSI)

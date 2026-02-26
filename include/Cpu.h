@@ -16,7 +16,8 @@ class Cpu
 	    void ExecDecReg(uint8_t opcode);
 	    void ExecLdRegReg(uint8_t opcode);
 	    void SetFlag(uint8_t mask, bool on);
-		void ExecAddAReg(uint8_t opcode);
+	    uint8_t GetFlag(uint8_t mask) const;
+	    void ExecAddAReg(uint8_t opcode);
 		void ExecAdcAReg(uint8_t opcode);
 		void Step();
 	    bool is_connected() const;
@@ -88,7 +89,8 @@ class Cpu
 		void ExecAddAImm();
 		void ExecSubAReg(uint8_t opcode);
 		void ExecSbcAReg(uint8_t opcode);
-		void SetFlagsAdd8(uint8_t a, uint8_t b_val, uint8_t carryIn, uint8_t result);
+	    bool Parity(uint8_t value);
+	    void SetFlagsAdd8(uint8_t a, uint8_t b_val, uint8_t carryIn, uint8_t result);
 		void SetFlagsSub8(uint8_t a, uint8_t b, uint8_t carryIn, uint8_t result);
 
 	    uint8_t Inc8(uint8_t v);

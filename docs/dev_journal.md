@@ -294,6 +294,55 @@ Added:
 
 This lets me lock down the “carry unchanged” behaviour via tests.
 
+---
+
+# 🧮 Phase 7 – Logical & Compare Instructions (Flags Get Serious)
+
+Today was a proper ALU day.
+
+Up until now the arithmetic work had focused on `INC` / `DEC` and the early arithmetic group.  
+This session expanded the ALU into logical operations and comparison — and with that came proper parity handling and full subtraction-flag behaviour.
+
+This was less about “new opcodes” and more about tightening architectural correctness.
+
+---
+
+## ✅ What Landed
+
+### 🔀 Immediate Logical Instructions
+
+Implemented:
+
+- `AND n` (0xE6)
+- `OR n`  (0xF6)
+- `XOR n` (0xEE)
+- `CP n`  (0xFE)
+
+These are small instructions, but flag-heavy.
+
+Each instruction now:
+
+- Fetches immediate byte
+- Performs operation
+- Updates flags correctly
+- Leaves CPU state deterministic and testable
+
+---
+
+## 🚩 Flag Architecture Cleanup
+
+This phase exposed a small but important design issue.
+
+Originally, `GetFlag()` returned the raw masked value from the `F` register.
+
+Which meant:
+
+- `FLAG_S` = `0x80`
+- Test expected `1`
+- Result was `128`
+
+Correct behaviour… wrong abstraction for tests.
+
 ## 🧪 Test cleanup: fixture refactor
 
 Every test used to start with:

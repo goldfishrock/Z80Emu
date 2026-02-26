@@ -99,6 +99,8 @@ No macro trickery. No hidden state mutation.
 - `LD r,r` (including `(HL)` variants)
 - Proper `HALT` handling (0x76)
 
+---
+
 ### 8-bit Increment / Decrement Group
 
 Fully implemented:
@@ -116,21 +118,63 @@ All 8-bit registers supported:
 Implementation uses opcode-family dispatch (`execIncReg`, `execDecReg`)
 rather than one-off switch cases.
 
-### Flag Behaviour (Z80-accurate for INC/DEC)
-
-For `INC/DEC`:
+Flag behaviour (Z80-accurate):
 
 - S (Sign)
 - Z (Zero)
 - H (Half carry / borrow)
 - P/V (Overflow)
 - N (Set on DEC, reset on INC)
-- **Carry preserved (unchanged)**
+- Carry preserved (unchanged)
 
-Overflow edge cases correctly handled:
+Overflow edge cases handled correctly:
 
 - `0x7F → 0x80`
 - `0x80 → 0x7F`
+
+---
+
+### 8-bit Arithmetic Group
+
+Implemented (register + immediate forms where applicable):
+
+- `ADD A,r`
+- `ADD A,n`
+- `ADC A,r`
+- `ADC A,n`
+- `SUB r`
+- `SUB n`
+- `SBC A,r`
+- `SBC A,n`
+
+All flags handled correctly:
+
+- S (Sign)
+- Z (Zero)
+- H (Half carry / borrow)
+- P/V (Overflow)
+- N
+- C (Carry)
+
+---
+
+### Logical / Compare Operations (Immediate)
+
+Fully implemented and tested:
+
+- `AND n`
+- `OR n`
+- `XOR n`
+- `CP n`
+
+Behaviour:
+
+- Correct S, Z, H, P/V, N, C handling
+- Parity implemented via helper
+- `CP` performs subtraction flag logic without modifying `A`
+- Bitmask-based flag handling via `SetFlag()` / `GetFlag()`
+
+---
 
 ### Flag Instructions
 
@@ -140,37 +184,16 @@ Overflow edge cases correctly handled:
 
 ## 🧪 Testing Strategy
 
-The project uses Catch2 with a dedicated test fixture:
-
-```cpp
-struct CpuFixture
-{
-    Bus bus;
-    Cpu cpu;
-
-    CpuFixture()
-    {
-        cpu.connect(&bus);
-        cpu.reset();
-    }
-};
-```
-
-This removes boilerplate from every test and ensures:
-
-- Fresh CPU per test
-- Deterministic state
-- Clean, readable test cases
-
-Tests currently verify:
+Tests now verify:
 
 - Register operations
 - Memory-based operations `(HL)`
-- Overflow behaviour
-- Flag correctness
-- Carry preservation
+- Increment / decrement overflow edges
+- Arithmetic carry / half-carry correctness
+- Logical instruction parity handling
+- `CP` behaviour (A unchanged, subtraction flags correct)
 
-Everything is green.
+**49 tests — all passing.**
 
 ---
 

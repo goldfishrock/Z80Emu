@@ -129,6 +129,17 @@ void Cpu::ExecSbcAReg(uint8_t opcode)
 	SetA(result);
 }
 
+bool Cpu::Parity(uint8_t value)
+{
+	bool parity = true; // even parity
+	while (value)
+	{
+		parity = !parity;
+		value &= (value - 1);
+	}
+	return parity;
+}
+
 void Cpu::Step()
 {
 	uint8_t opcode = FetchByte();
@@ -266,6 +277,74 @@ void Cpu::Step()
 	case 0x9C: case 0x9D: case 0x9E: case 0x9F:
 		ExecSbcAReg(opcode);
 		break;
+
+	case 0xE6:											// AND n
+	{
+		uint8_t value = FetchByte();   // however you fetch immediate
+		uint8_t result = GetA() & value;
+
+		SetA(result);
+
+		// Flags
+		SetFlag(FLAG_S,(result & 0x80) != 0);
+		SetFlag(FLAG_Z, (result == 0));
+		SetFlag(FLAG_H ,true);
+		SetFlag(FLAG_PV, Parity(result)); 
+		SetFlag(FLAG_N, false);
+		SetFlag(FLAG_C , false);
+
+		break;
+	}
+
+	case 0xF6: // OR n
+	{
+		const uint8_t value = FetchByte();
+		const uint8_t result = GetA() | value;
+
+		SetA(result);
+
+		SetFlag(FLAG_S, (result & 0x80) != 0);
+		SetFlag(FLAG_Z, (result == 0));
+		SetFlag(FLAG_H, false);
+		SetFlag(FLAG_PV, Parity(result));
+		SetFlag(FLAG_N, false);
+		SetFlag(FLAG_C, false);
+
+		break;
+	}
+
+	case 0xEE:											// XOR n
+	{
+		const uint8_t value = FetchByte();
+		const uint8_t result = GetA() ^ value;
+
+		SetA(result);
+
+		SetFlag(FLAG_S, (result & 0x80) != 0);
+		SetFlag(FLAG_Z, (result == 0));
+		SetFlag(FLAG_H, false);
+		SetFlag(FLAG_PV, Parity(result));
+		SetFlag(FLAG_N, false);
+		SetFlag(FLAG_C, false);
+
+		break;
+	}
+
+	case 0xFE: // CP n
+	{
+		const uint8_t value = FetchByte();
+		const uint8_t a = GetA();
+		const uint8_t result = static_cast<uint8_t>(a - value);
+
+		//SetFlag(FLAG_S, (result & 0x80) != 0);
+		SetFlag(FLAG_Z, (result == 0));
+		//SetFlag(FLAG_H, (a & 0x0F) < (value & 0x0F)); // half-borrow
+		//SetFlag(FLAG_PV, ((a ^ value) & (a ^ result) & 0x80) != 0); // overflow
+		SetFlag(FLAG_N, true);
+		SetFlag(FLAG_C, a < value);
+
+		break;
+	}
 
 	default:
 		// TODO :: For now, do nothing (we’ll tighten this later)
