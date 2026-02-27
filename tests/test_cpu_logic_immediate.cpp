@@ -35,13 +35,13 @@ TEST_CASE_METHOD(CpuFixture, "AND n sets flags correctly", "[cpu][alu][logic]")
     REQUIRE(cpu.GetA() == 0b10001000);
 
     // Flags: S Z H P/V N C
-    REQUIRE(cpu.GetFlag(cpu.FLAG_S) != 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_S) != 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_Z) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_H) != 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_PV) != 0);   // parity of 0b10001000 = even (2 bits set)
-    REQUIRE(cpu.GetFlag(cpu.FLAG_N) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_C) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_S) != 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_S) != 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_Z) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_H) != 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_PV) != 0);   // parity of 0b10001000 = even (2 bits set)
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_N) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_C) == 0);
 }
 
 // **********************************************
@@ -61,12 +61,12 @@ TEST_CASE_METHOD(CpuFixture, "OR n sets flags correctly", "[cpu][alu][logic]")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x00);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_S) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_Z) != 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_H) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_PV) != 0); // parity of 0 is even
-    REQUIRE(cpu.GetFlag(cpu.FLAG_N) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_C) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_S) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_Z) != 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_H) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_PV) != 0); // parity of 0 is even
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_N) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_C) == 0);
 }
 
 // **********************************************
@@ -86,12 +86,12 @@ TEST_CASE_METHOD(CpuFixture, "XOR n sets flags correctly", "[cpu][alu][logic]")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x00);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_S) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_Z) != 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_H) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_PV) != 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_N) == 0);
-    REQUIRE(cpu.GetFlag(cpu.FLAG_C) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_S) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_Z) != 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_H) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_PV) != 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_N) == 0);
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_C) == 0);
 }
 
 // **********************************************
@@ -111,7 +111,7 @@ TEST_CASE_METHOD(CpuFixture, "CP n compares without changing A", "[cpu][alu][cp]
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x10);      // unchanged
-    REQUIRE(cpu.GetFlag(cpu.FLAG_Z) != 0);  // equal
-    REQUIRE(cpu.GetFlag(cpu.FLAG_N) != 0);  // compare acts like subtraction
-    REQUIRE(cpu.GetFlag(cpu.FLAG_C) == 0); // no borrow
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_Z) != 0);  // equal
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_N) != 0);  // compare acts like subtraction
+    REQUIRE(cpu.GetFlag(Cpu::FLAG_C) == 0); // no borrow
 }

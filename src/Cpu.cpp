@@ -145,7 +145,7 @@ void Cpu::ExecAdcAReg(uint8_t opcode)
 	const uint8_t lhs = GetA();
 	const uint8_t rhs = (this->*reg8Get[src])();
 
-	const uint8_t carry_in = (GetF() & FLAG_C) ? 1 : 0;
+	const uint8_t carry_in = (GetF() & Cpu::FLAG_C) ? 1 : 0;
 
 	const uint16_t sum = static_cast<uint16_t>(lhs) + rhs + carry_in;
 	const uint8_t result = static_cast<uint8_t>(sum);
@@ -187,12 +187,12 @@ void Cpu::SetFlagsAdd8(uint8_t lhs, uint8_t rhs, uint8_t carryIn, uint8_t result
 	const uint16_t sum = static_cast<uint16_t>(lhs) + rhs + carryIn;
 
 	uint8_t f = 0;
-	if (result & 0x80) f |= FLAG_S;
-	if (result == 0)   f |= FLAG_Z;
-	if (((lhs & 0x0F) + (rhs & 0x0F) + carryIn) > 0x0F) f |= FLAG_H;
-	if ((~(lhs ^ rhs) & (lhs ^ result) & 0x80) != 0)      f |= FLAG_PV;
+	if (result & 0x80) f |= Cpu::FLAG_S;
+	if (result == 0)   f |= Cpu::FLAG_Z;
+	if (((lhs & 0x0F) + (rhs & 0x0F) + carryIn) > 0x0F) f |= Cpu::FLAG_H;
+	if ((~(lhs ^ rhs) & (lhs ^ result) & 0x80) != 0)      f |= Cpu::FLAG_PV;
 	// N=0
-	if (sum > 0xFF) f |= FLAG_C;
+	if (sum > 0xFF) f |= Cpu::FLAG_C;
 
 	// Save the value to F register
 	SetF(f);
@@ -203,13 +203,13 @@ void Cpu::SetFlagsSub8(uint8_t lhs, uint8_t rhs, uint8_t carryIn, uint8_t result
 	const uint16_t subtrahend = static_cast<uint16_t>(rhs) + carryIn;
 
 	uint8_t f = 0;
-	if (result & 0x80) f |= FLAG_S;
-	if (result == 0)   f |= FLAG_Z;
-	if ((lhs & 0x0F) < ((rhs & 0x0F) + carryIn)) f |= FLAG_H;
-	if (((lhs ^ rhs) & (lhs ^ result) & 0x80) != 0) f |= FLAG_PV;
-	f |= FLAG_N;
+	if (result & 0x80) f |= Cpu::FLAG_S;
+	if (result == 0)   f |= Cpu::FLAG_Z;
+	if ((lhs & 0x0F) < ((rhs & 0x0F) + carryIn)) f |= Cpu::FLAG_H;
+	if (((lhs ^ rhs) & (lhs ^ result) & 0x80) != 0) f |= Cpu::FLAG_PV;
+	f |= Cpu::FLAG_N;
 
-	if (static_cast<uint16_t>(lhs) < subtrahend) f |= FLAG_C;
+	if (static_cast<uint16_t>(lhs) < subtrahend) f |= Cpu::FLAG_C;
 
 	// Save the value to F register
 	SetF(f);
@@ -229,11 +229,11 @@ uint8_t Cpu::Inc8(uint8_t v)
 {
 	const uint8_t r = static_cast<uint8_t>(v + 1);
 
-	SetFlag(FLAG_S, (r & 0x80) != 0);
-	SetFlag(FLAG_Z, r == 0);
-	SetFlag(FLAG_H, (v & 0x0F) == 0x0F);
-	SetFlag(FLAG_PV, v == 0x7F);     // +127 -> -128 overflow
-	SetFlag(FLAG_N, false);         // INC resets N
+	SetFlag(Cpu::FLAG_S, (r & 0x80) != 0);
+	SetFlag(Cpu::FLAG_Z, r == 0);
+	SetFlag(Cpu::FLAG_H, (v & 0x0F) == 0x0F);
+	SetFlag(Cpu::FLAG_PV, v == 0x7F);     // +127 -> -128 overflow
+	SetFlag(Cpu::FLAG_N, false);         // INC resets N
 	// C unchanged
 
 	return r;
@@ -243,11 +243,11 @@ uint8_t Cpu::Dec8(uint8_t v)
 {
 	const uint8_t r = static_cast<uint8_t>(v - 1);
 
-	SetFlag(FLAG_S, (r & 0x80) != 0);
-	SetFlag(FLAG_Z, r == 0);
-	SetFlag(FLAG_H, (v & 0x0F) == 0x00);
-	SetFlag(FLAG_PV, v == 0x80);     // -128 -> +127 overflow
-	SetFlag(FLAG_N, true);          // DEC sets N
+	SetFlag(Cpu::FLAG_S, (r & 0x80) != 0);
+	SetFlag(Cpu::FLAG_Z, r == 0);
+	SetFlag(Cpu::FLAG_H, (v & 0x0F) == 0x00);
+	SetFlag(Cpu::FLAG_PV, v == 0x80);     // -128 -> +127 overflow
+	SetFlag(Cpu::FLAG_N, true);          // DEC sets N
 	// C unchanged
 
 	return r;

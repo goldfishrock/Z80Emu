@@ -343,17 +343,72 @@ Which meant:
 
 Correct behaviour… wrong abstraction for tests.
 
-## 🧪 Test cleanup: fixture refactor
+---
 
-Every test used to start with:
+## 🧱 Phase 8 — Stack Foundations (PUSH / POP)
 
-```cpp
-Bus bus;
-Cpu cpu;
-cpu.connect(&bus);
-cpu.reset();
+Today marked a structural milestone in the emulator:  
+**Stack operations are now implemented and fully tested.**
+
+### ✅ Implemented
+
+#### 📦 PUSH rr
+- `0xC5` → PUSH BC  
+- `0xD5` → PUSH DE  
+- `0xE5` → PUSH HL  
+
+#### 📦 POP rr
+- `0xC1` → POP BC  
+- `0xD1` → POP DE  
+- `0xE1` → POP HL  
+
+### 🧠 Behaviour Implemented
+
+- Stack grows **downwards** in memory.
+- PUSH:
+  - `SP--`
+  - store high byte
+  - `SP--`
+  - store low byte
+- POP:
+  - read low byte
+  - `SP++`
+  - read high byte
+  - `SP++`
+- No flags are affected.
+- Exact Z80 byte ordering verified.
+
+### 🧪 Test Coverage
+
+- Verified correct SP movement (±2)
+- Verified memory write order
+- Verified register restoration
+- 100% green test suite
+
+**Test Count: 60 passing, 0 failing**
 
 ---
+
+### 🏗 Architectural Impact
+
+This unlocks:
+
+- `CALL nn`
+- `RET`
+- `RST`
+- Interrupt handling later
+
+The emulator now has:
+- Working 8-bit ALU
+- Working 16-bit arithmetic
+- Working 16-bit register increment/decrement
+- Working stack primitives
+
+This is the first step toward real program flow.
+
+
+---
+
 
 # 🧪 Testing Strategy
 
@@ -392,115 +447,195 @@ Deterministic, Repeatable & Safe.
 
 ## ✅ Implemented
 
-### Core / Flow
+### 🧠 Core / Flow
 - NOP  
 - PC fetch/increment discipline  
 - 16-bit register pairs (BC, DE, HL, SP)
 
-### Loads / Data movement
-- LD r,r block (opcode bitfield decode + dynamic member-function dispatch)  
-- `(HL)` memory handling within load/increment paths
+---
 
-### Arithmetic (so far)
-- INC r (all 8-bit regs + `(HL)`)  
-- DEC r (all 8-bit regs + `(HL)`)  
+### 📦 Loads / Data Movement
+- LD r,r block (opcode bitfield decode + dynamic member-function dispatch)  
+- `(HL)` memory handling within load/increment paths  
+
+---
+
+### 🧮 8-bit ALU – Arithmetic & Logical
+
+#### 🔁 Increment / Decrement
+- INC r (all 8-bit registers + `(HL)`)  
+- DEC r (all 8-bit registers + `(HL)`)
+
+Fully correct flag behaviour:
+- S
+- Z
+- H
+- P/V
+- N
+- Carry preserved (unchanged) — verified via SCF-based tests
+
+---
+
+#### ➕ Logical Immediate Instructions
+- AND n (0xE6)
+- OR n  (0xF6)
+- XOR n (0xEE)
+- CP n  (0xFE)
+
+Correct flag handling implemented and tested:
+- S
+- Z
+- H (where appropriate)
+- P/V (true parity implementation)
+- N
+- C (correct subtraction semantics for CP)
+
+Parity logic centralised and reusable.
+
+---
+
+### 🧷 Flag Instructions
 - SCF (Set Carry Flag)
 
-### Flags
-- Correct behaviour for INC/DEC:
-- S, Z, H, P/V, N updated properly
-- Carry preserved (unchanged) — verified by tests
+---
+
+### 📦 Stack Operations (Phase 8)
+
+#### PUSH rr
+- PUSH BC (0xC5)
+- PUSH DE (0xD5)
+- PUSH HL (0xE5)
+
+#### POP rr
+- POP BC (0xC1)
+- POP DE (0xD1)
+- POP HL (0xE1)
+
+Correct Z80 behaviour:
+- Stack grows downward
+- Correct byte ordering (high byte first on PUSH)
+- SP adjusted correctly (±2)
+- No flags modified
+
+---
 
 ## 🏆 Architectural Wins
 
 - 🚫 No switch explosion  
 - 🧮 Bitfield decoding  
 - 🧠 Member-function dispatch  
-- ♻️ Opcode-family handlers (INC/DEC now scalable)
-- 🧪 Catch2 fixture cleanup (less boilerplate, clearer tests)
+- ♻️ Opcode-family handlers (INC/DEC scalable)  
+- 🧪 Clean Catch2 fixture pattern  
+- 🧱 Deterministic ALU flag logic  
+- 📦 Stack abstraction now unlocks real program flow  
 
-## 🛠️ Infrastructure
+---
 
-- Structured CMake build  
-- Catch2 test harness  
-- Tests split/organised by instruction groups (continuing trend)
+## 🧪 Test Status
 
+- 60 passing tests  
+- 0 failures  
+- Instruction-level isolation  
+- Flag behaviour verified explicitly  
+- Stack correctness verified (SP movement + memory order) 
 
 ---
 
 
 # 🔮 Where This Is Heading
 
-## 🔮 Next Logical Steps (the ubiquitous TODO)
-- ➕ Arithmetic group (ADD, SUB, ADC, SBC)  
-- ⏱️ Proper T-state timing  
+## ➕ Next Logical Steps
 
-### 🧮 More ALU / Flag-Critical Ops
-- ➕ `AND`, `OR`, `XOR`, `CP`
-- 🔁 `INC rr` / `DEC rr` (16-bit inc/dec)
-- 🧷 `DAA` (annoying, but important for correctness)
-- 🧊 `CPL`, `SCF`, `CCF` (flag twiddlers)
+### 🧮 Full Arithmetic Group (8-bit)
+- ADD A,r  
+- ADD A,n  
+- SUB r  
+- SUB n  
+- ADC  
+- SBC  
 
-### 🧠 Shifts / Rotates / Bit Ops
-- 🔄 `RLCA`, `RRCA`, `RLA`, `RRA`
-- 🌀 CB-prefix group: `RLC/RRC/RL/RR`, `SLA/SRA/SRL`
-- 🧩 `BIT`, `SET`, `RES` (CB-prefixed bit manipulation)
-
-### 🧵 Memory Addressing & Data Movement
-- 🧳 `LD (nn),A` / `LD A,(nn)`
-- 🧱 `LD rr,nn` / `LD (nn),rr` / `LD rr,(nn)`
-- 🔁 `EX`, `EXX` (register bank swaps)
-
-### 📚 Stack + Subroutines
-- 📌 `PUSH rr` / `POP rr`
-- 📞 `CALL nn` / `RET`
-- 🧷 `RST n` (quick call vectors)
-- 🔀 Conditional forms: `CALL cc,nn`, `RET cc`
-
-### 🧭 Branching / Control Flow
-- 🦘 `JP nn` / `JR e`
-- 🎯 Conditional jumps: `JP cc,nn`, `JR cc,e`
-- 🔁 `DJNZ e` (super common; great for tests)
-
-### 🧨 Prefixes / Extended Instruction Sets
-- 🧩 `CB` prefix (bit ops) — big milestone
-- 🧱 `ED` prefix (block ops, I/O, 16-bit extras)
-- 🦶 `DD` / `FD` (IX/IY + displacement addressing) — later, but essential
-
-### 🔌 I/O System
-- 📥 `IN A,(n)` / `OUT (n),A`
-- 🔄 `IN r,(C)` / `OUT (C),r` (ED-prefixed)
-- 📦 Block I/O: `INI/IND/INIR/INDR`, `OUTI/OUTD/OTIR/OTDR` (ED-prefixed)
-
-### 🧱 Interrupts + CPU Modes
-- ⚡ Interrupt flip-flops: `DI`, `EI`
-- 🧯 `IM 0/1/2`
-- ⏳ `HALT` behaviour (timing + interrupt exit)
-- 🧭 Refresh register `R` and interrupt vector `I`
-
-### ⏱️ Timing + Accuracy Work
-- ⏲️ Per-instruction T-state tables
-- 🧬 Correct extra cycles for taken/not-taken branches
-- 🧵 Memory contention / wait-states (optional depending on target machine)
-- 🎛️ Accurate behaviour for prefixes and `(IX+d)/(IY+d)` timings
-
-### 🧠 Memory System (ROM / RAM / Memory Map)
-- 🧱 Implement explicit **ROM + RAM regions** in the `Bus`
-  - ROM: readable, **writes ignored** 
-  - RAM: readable + writable
-- 🗺️ Define a simple **memory map**
-  - Example: `0x0000–0x7FFF` ROM, `0x8000–0xFFFF` RAM 
-- 📦 Add helpers for loading images:
-  - Load **ROM binary** into ROM region at reset
-  - Load small **test programs** into RAM for integration tests
-- 🧪 Add tests for memory correctness:
-  - ROM write attempts do not change ROM contents
-  - RAM writes persist
-  - Reads are correct across boundaries
-- 🔁Bank switching / paging (for targetting Spectrum / CPM machines etc)
-
-
+These will complete the core 8-bit arithmetic engine.
 
 ---
 
-Creating the emulator is no longer an experiment or dream. Line by line it is becoming an engineered system.
+### 🧮 16-bit Arithmetic Completion
+- ADD HL,rr  
+- INC rr  
+- DEC rr  
+
+---
+
+### 🧷 Remaining Flag Instructions
+- DAA (BCD adjust — subtle and important)
+- CPL
+- CCF
+
+---
+
+### 🧠 Shifts / Rotates / Bit Ops
+- RLCA, RRCA, RLA, RRA  
+- CB-prefix group:
+  - RLC / RRC / RL / RR  
+  - SLA / SRA / SRL  
+  - BIT / SET / RES  
+
+Major milestone once CB group lands.
+
+---
+
+### 🧵 Subroutines & Control Flow
+- CALL nn  
+- RET  
+- RST n  
+- Conditional CALL/RET  
+
+---
+
+### 🧭 Branching
+- JP nn  
+- JR e  
+- Conditional JP / JR  
+- DJNZ  
+
+---
+
+### 🧨 Prefix Instruction Sets
+- CB prefix (bit ops)
+- ED prefix (block ops, extended arithmetic, I/O)
+- DD / FD prefixes (IX / IY + displacement)
+
+---
+
+### 🔌 I/O System
+- IN / OUT instructions  
+- Block I/O (ED-prefixed forms)
+
+---
+
+### ⚡ Interrupts & CPU Modes
+- DI / EI  
+- IM 0 / 1 / 2  
+- HALT behaviour  
+- I and R registers  
+
+---
+
+### ⏱️ Timing & Accuracy
+- Per-instruction T-state modelling  
+- Taken vs not-taken cycle differences  
+- Prefix timing corrections  
+- Optional memory contention modelling  
+
+---
+
+### 🧱 Memory System (ROM / RAM Mapping)
+- Explicit ROM region (write-protected)
+- Explicit RAM region
+- Defined memory map
+- ROM loading helpers
+- Integration-level test programs
+- Future bank switching support
+
+---
+
+Line by line... it's becomming a full Z80 core.

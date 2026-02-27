@@ -92,108 +92,98 @@ No macro trickery. No hidden state mutation.
 
 ## ✅ Currently Implemented Instructions
 
-### Core
-
-- `NOP`
-- `LD BC,nn`
-- `LD r,r` (including `(HL)` variants)
-- Proper `HALT` handling (0x76)
-
----
-
-### 8-bit Increment / Decrement Group
-
-Fully implemented:
-
-- `INC r`
-- `DEC r`
-- `INC (HL)`
-- `DEC (HL)`
-
-All 8-bit registers supported:
-
-- A, B, C, D, E, H, L
-- Memory via `(HL)`
-
-Implementation uses opcode-family dispatch (`execIncReg`, `execDecReg`)
-rather than one-off switch cases.
-
-Flag behaviour (Z80-accurate):
-
-- S (Sign)
-- Z (Zero)
-- H (Half carry / borrow)
-- P/V (Overflow)
-- N (Set on DEC, reset on INC)
-- Carry preserved (unchanged)
-
-Overflow edge cases handled correctly:
-
-- `0x7F → 0x80`
-- `0x80 → 0x7F`
+### 📥 16-bit Load Instructions
+- `LD BC,nn` (0x01)
+- `LD DE,nn` (0x11)
+- `LD HL,nn` (0x21)
+- `LD SP,nn` (0x31)
 
 ---
 
-### 8-bit Arithmetic Group
-
-Implemented (register + immediate forms where applicable):
-
-- `ADD A,r`
-- `ADD A,n`
-- `ADC A,r`
-- `ADC A,n`
-- `SUB r`
-- `SUB n`
-- `SBC A,r`
-- `SBC A,n`
-
-All flags handled correctly:
-
-- S (Sign)
-- Z (Zero)
-- H (Half carry / borrow)
-- P/V (Overflow)
-- N
-- C (Carry)
+### 📥 8-bit Load Instructions
+- `LD r,n`
+  - A, B, C, D, E, H, L
+- `LD r,r`
 
 ---
 
-### Logical / Compare Operations (Immediate)
-
-Fully implemented and tested:
-
-- `AND n`
-- `OR n`
-- `XOR n`
-- `CP n`
-
-Behaviour:
-
-- Correct S, Z, H, P/V, N, C handling
-- Parity implemented via helper
-- `CP` performs subtraction flag logic without modifying `A`
-- Bitmask-based flag handling via `SetFlag()` / `GetFlag()`
+### 🔁 8-bit Increment / Decrement
+- `INC r` (including `(HL)`)
+- `DEC r` (including `(HL)`)
 
 ---
 
-### Flag Instructions
+### 🔁 16-bit Increment / Decrement
+- `INC BC` (0x03)
+- `INC DE` (0x13)
+- `INC HL` (0x23)
+- `INC SP` (0x33)
 
-- `SCF` (Set Carry Flag)
+- `DEC BC` (0x0B)
+- `DEC DE` (0x1B)
+- `DEC HL` (0x2B)
+- `DEC SP` (0x3B)
 
 ---
 
-## 🧪 Testing Strategy
+### 🧮 8-bit Arithmetic
+- `ADD A,r` (0x80–0x87)
+- `ADD A,n` (0xC6)
+- `ADC A,r` (0x88–0x8F)
+- `SUB r` (0x90–0x97)
+- `SBC A,r` (0x98–0x9F)
 
-Tests now verify:
+---
 
-- Register operations
-- Memory-based operations `(HL)`
-- Increment / decrement overflow edges
-- Arithmetic carry / half-carry correctness
-- Logical instruction parity handling
-- `CP` behaviour (A unchanged, subtraction flags correct)
+### 🧠 8-bit Logical Operations
+- `AND n` (0xE6)
+- `OR n`  (0xF6)
+- `XOR n` (0xEE)
+- `CP n`  (0xFE)
 
-**49 tests — all passing.**
+---
+
+### 🔢 16-bit Arithmetic
+- `ADD HL,BC` (0x09)
+- `ADD HL,DE` (0x19)
+- `ADD HL,HL` (0x29)
+- `ADD HL,SP` (0x39)
+
+---
+
+### 📦 Stack Operations
+- `PUSH BC` (0xC5)
+- `PUSH DE` (0xD5)
+- `PUSH HL` (0xE5)
+
+- `POP BC`  (0xC1)
+- `POP DE`  (0xD1)
+- `POP HL`  (0xE1)
+
+---
+
+### 🏳 Flag Control
+- `SCF` (0x37)
+
+---
+
+### 🧪 Test Coverage
+
+- 60 passing tests
+- ALU flag behaviour verified
+- 16-bit half-carry verified
+- Stack byte order verified
+- Stack pointer movement verified
+
+---
+
+The emulator now has:
+
+- Core 8-bit ALU functionality
+- 16-bit arithmetic
+- 16-bit register increment/decrement
+- Functional stack primitives
+- Verified flag behaviour for implemented instructions
 
 ---
 

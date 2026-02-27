@@ -37,7 +37,7 @@ TEST_CASE("ADD A,B sets A and flags correctly (0x7F + 0x01)")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x80);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_S | cpu.FLAG_H | cpu.FLAG_PV));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_S | Cpu::FLAG_H | Cpu::FLAG_PV));
 }
 
 // **********************************************
@@ -58,7 +58,7 @@ TEST_CASE("ADD A,n (0xC6): 0xFF + 0x01 -> 0x00 sets Z|H|C")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x00);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_Z | cpu.FLAG_H | cpu.FLAG_C));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_Z | Cpu::FLAG_H | Cpu::FLAG_C));
 }
 
 // **********************************************
@@ -80,7 +80,7 @@ TEST_CASE("ADC A,B (0x88): carry-in increments result")
 
     cpu.SetA(0x00);
     cpu.SetB(0x00);
-    cpu.SetF(cpu.FLAG_C);        // carry in = 1
+    cpu.SetF(Cpu::FLAG_C);        // carry in = 1
 
     cpu.Step();
 
@@ -107,12 +107,12 @@ TEST_CASE("ADC A,B (0x88): 0xFF + 0x00 + C -> 0x00 sets Z|H|C")
 
     cpu.SetA(0xFF);
     cpu.SetB(0x00);
-    cpu.SetF(cpu.FLAG_C);        // carry in = 1
+    cpu.SetF(Cpu::FLAG_C);        // carry in = 1
 
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x00);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_Z | cpu.FLAG_H | cpu.FLAG_C));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_Z | Cpu::FLAG_H | Cpu::FLAG_C));
 }
 
 // **********************************************
@@ -138,7 +138,7 @@ TEST_CASE("SUB B (0x90): 0x05 - 0x03 = 0x02 sets N")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x02);
-    REQUIRE(cpu.GetF() == cpu.FLAG_N);
+    REQUIRE(cpu.GetF() == Cpu::FLAG_N);
 }
 
 // **********************************************
@@ -163,7 +163,7 @@ TEST_CASE("SUB B (0x90): 0x00 - 0x01 = 0xFF sets S|H|N|C")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0xFF);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_S | cpu.FLAG_H | cpu.FLAG_N | cpu.FLAG_C));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_S | Cpu::FLAG_H | Cpu::FLAG_N | Cpu::FLAG_C));
 }
 
 // **********************************************
@@ -188,7 +188,7 @@ TEST_CASE("SUB B (0x90): 0x80 - 0x01 = 0x7F sets H|PV|N")
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x7F);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_H | cpu.FLAG_PV | cpu.FLAG_N));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_H | Cpu::FLAG_PV | Cpu::FLAG_N));
 }
 
 // **********************************************
@@ -209,12 +209,12 @@ TEST_CASE("SBC A,B (0x98): 0x01 - 0x00 - C -> 0x00 sets Z|N")
 
     cpu.SetA(0x01);
     cpu.SetB(0x00);
-    cpu.SetF(cpu.FLAG_C);    // carry_in = 1
+    cpu.SetF(Cpu::FLAG_C);    // carry_in = 1
 
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0x00);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_Z | cpu.FLAG_N));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_Z | Cpu::FLAG_N));
 }
 
 // **********************************************
@@ -235,10 +235,10 @@ TEST_CASE("SBC A,B (0x98): 0x00 - 0x00 - C -> 0xFF sets S|H|N|C")
 
     cpu.SetA(0x00);
     cpu.SetB(0x00);
-    cpu.SetF(cpu.FLAG_C);    // carry_in = 1
+    cpu.SetF(Cpu::FLAG_C);    // carry_in = 1
 
     cpu.Step();
 
     REQUIRE(cpu.GetA() == 0xFF);
-    REQUIRE(cpu.GetF() == (cpu.FLAG_S | cpu.FLAG_H | cpu.FLAG_N | cpu.FLAG_C));
+    REQUIRE(cpu.GetF() == (Cpu::FLAG_S | Cpu::FLAG_H | Cpu::FLAG_N | Cpu::FLAG_C));
 }
