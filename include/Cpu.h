@@ -90,6 +90,9 @@ class Cpu
 		void ExecSubAReg(uint8_t opcode);
 		void ExecSbcAReg(uint8_t opcode);
 	    bool Parity(uint8_t value);
+	    void execAddHl(uint16_t value);
+	    void ExecPush(uint16_t value);
+	    uint16_t ExecPop();
 	    void SetFlagsAdd8(uint8_t a, uint8_t b_val, uint8_t carryIn, uint8_t result);
 		void SetFlagsSub8(uint8_t a, uint8_t b, uint8_t carryIn, uint8_t result);
 

@@ -1,0 +1,7 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/dotCover/Editor/HighlightingSourceSnapshotLocation/@EntryValue">C:\Users\goldfishrock\AppData\Local\Temp\JetBrains\ReSharperPlatformVs17\vAny_d2fd95f9\CoverageData\_Z80Emu.19\Snapshot\snapshot.utdcvr</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=80a9341c_002D02e2_002D4d1c_002D83d1_002D3a1c91c7214e/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="PUSH BC (0xC5) stores BC on stack" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;Catch::DB94C55F-6B9A-4AAE-80D7-29FD8153E6B5::::PUSH BC (0xC5) stores BC on stack&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
