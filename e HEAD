@@ -1,5 +1,0 @@
-[33m7420b06[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Phase 7 – Implement immediate logical & compare instructions
-[33m208e135[m Minor changes to journal
-[33m7402d40[m Updated dev-log and readme with progress
-[33m5f34f71[m Merge feature/cpu-pc into main
-[33mdc7a82b[m Implement ADD/ADC/SUB/SBC A,r group; add tests; refactor register naming to Google style; split CPU ops and tests
