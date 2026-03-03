@@ -162,6 +162,31 @@ No macro trickery. No hidden state mutation.
 
 ---
 
+### 🧭 Control Flow (Phase 9)
+
+#### Absolute Jumps
+- `JP nn` (0xC3)
+- `JP (HL)` (0xE9)
+
+#### Relative Jumps
+- `JR e` (0x18)
+- `JR NZ,e` (0x20)
+- `JR Z,e`  (0x28)
+- `JR NC,e` (0x30)
+- `JR C,e`  (0x38)
+
+#### Subroutine Control
+- `CALL nn` (0xCD)
+- `RET`     (0xC9)
+
+All control-flow instructions:
+- Correct little-endian handling
+- Proper signed displacement behaviour
+- Accurate stack interaction
+- No unintended flag side-effects
+
+---
+
 ### 🏳 Flag Control
 - `SCF` (0x37)
 
@@ -169,11 +194,12 @@ No macro trickery. No hidden state mutation.
 
 ### 🧪 Test Coverage
 
-- 60 passing tests
+- 76+ passing tests
 - ALU flag behaviour verified
 - 16-bit half-carry verified
 - Stack byte order verified
 - Stack pointer movement verified
+- Control flow and signed displacement verified
 
 ---
 
@@ -202,27 +228,154 @@ If not… that’s why we have tests.
 
 ## 🗺 Roadmap
 
-### Next Instruction Groups
+The foundation is now solid.  
+What remains is depth, completeness and hardware accuracy.
 
-- `CCF` (Complement Carry)
-- 8-bit arithmetic group:
-  - `ADD A,r`
-  - `ADD A,(HL)`
-  - `ADC A,r`
-  - `SUB r`
-  - `SBC A,r`
-- 16-bit increment/decrement:
-  - `INC rr`
-  - `DEC rr`
+---
 
-### ALU / Flag-Critical Operations
+## 🧭 Remaining Control Flow
 
-- `AND`
-- `OR`
-- `XOR`
-- `CP`
-- `CPL`
-- `DAA` (inevitable… and slightly terrifying)
+### 📞 Conditional Subroutines
+- `RET NZ`, `RET Z`, `RET NC`, `RET C`
+- `CALL NZ,nn`, `CALL Z,nn`, `CALL NC,nn`, `CALL C,nn`
+
+Completes flag-driven subroutine branching.
+
+---
+
+### 🔁 Loop Control
+- `DJNZ e`
+
+Classic Z80 tight-loop instruction (decrement B and branch).
+
+---
+
+### 📍 Absolute Conditional Jumps
+- `JP NZ,nn`
+- `JP Z,nn`
+- `JP NC,nn`
+- `JP C,nn`
+- `JP PO,nn`
+- `JP PE,nn`
+- `JP P,nn`
+- `JP M,nn`
+
+Extends conditional branching beyond relative forms.
+
+---
+
+## 🧷 Flag & Accumulator Instructions
+
+- `CCF` (Complement Carry Flag)
+- `CPL` (Complement Accumulator)
+- `DAA` (Decimal Adjust Accumulator — BCD correctness)
+
+These tighten full flag compliance.
+
+---
+
+## 🔄 Rotate & Shift Instructions (Non-Prefixed)
+
+- `RLCA`
+- `RRCA`
+- `RLA`
+- `RRA`
+
+Flag-sensitive and timing-sensitive.
+
+---
+
+## 🧠 CB Prefix Group (Bit / Rotate / Shift)
+
+- `RLC`, `RRC`, `RL`, `RR`
+- `SLA`, `SRA`, `SRL`
+- `BIT`
+- `SET`
+- `RES`
+
+Large instruction family.  
+Major milestone once complete.
+
+---
+
+## 🧨 ED Prefix Group (Extended Instructions)
+
+- Block transfer (`LDI`, `LDIR`, `LDD`, `LDDR`)
+- Block compare (`CPI`, `CPIR`, etc.)
+- Extended arithmetic
+- I/O instructions (`IN`, `OUT`)
+- Interrupt mode control (`IM 0/1/2`)
+- `RETI`, `RETN`
+
+Brings the CPU closer to real-world software compatibility.
+
+---
+
+## 📍 Index Registers (DD / FD Prefix)
+
+- IX / IY register support
+- Indexed addressing with displacement
+- CB-prefixed indexed bit operations
+
+This significantly increases decoder complexity.
+
+---
+
+## 🔌 I/O System
+
+- `IN A,(n)`
+- `OUT (n),A`
+- Register-based port I/O
+- Block I/O (ED-prefixed)
+
+Required for real hardware emulation.
+
+---
+
+## ⚡ Interrupt System
+
+- `DI`, `EI`
+- Interrupt modes 0 / 1 / 2
+- `HALT`
+- I and R registers
+- Interrupt acknowledge cycle modelling
+
+Essential for CP/M and full system behaviour.
+
+---
+
+## ⏱ Timing & Accuracy
+
+- Per-instruction T-state modelling
+- Taken vs not-taken branch timing differences
+- Prefix timing penalties
+- Optional memory contention modelling
+- Accurate HALT cycle behaviour
+
+Moves from logical correctness to hardware realism.
+
+---
+
+## 🧱 Memory System Evolution
+
+- ROM/RAM region separation
+- Write-protected ROM
+- Configurable memory map
+- ROM image loading
+- Bank switching (future)
+- Integration test harness for real programs
+
+---
+
+## 🖥 System-Level Goals
+
+- Execute small hand-written assembly programs
+- Run test ROM suites
+- Eventually boot CP/M
+- Add minimal peripheral layer
+- Possibly build a simple Z80-based virtual machine
+
+---
 
 ### Structural / Accuracy Work
 

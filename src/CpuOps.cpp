@@ -318,7 +318,92 @@ void Cpu::Step()
 			break;
 		}
 
+		case 0xC3: // JP nn
+		{
+			const uint16_t addr = FetchWord();  // MUST read low then high
+			SetPc(addr);
+			break;
+		}
+
+		case 0xE9: // JP (HL)
+		{
+			SetPc(GetHl());
+			break;
+		}
+
+		case 0x18: // JR e
+		{
+			const int8_t offset = static_cast<int8_t>(FetchByte());
+			const uint16_t pc = GetPc(); // already points to next instruction
+			SetPc(static_cast<uint16_t>(pc + offset));
+			break;
+		}
 		
+		case 0x20: // JR NZ, e
+		{
+			const int8_t offset = static_cast<int8_t>(FetchByte());
+			if (!GetFlag(FLAG_Z))
+			{
+				SetPc(static_cast<uint16_t>(GetPc() + offset));
+			}
+			break;
+		}
+
+		case 0x28: // JR Z, e
+		{
+			const int8_t offset = static_cast<int8_t>(FetchByte());
+			if (GetFlag(FLAG_Z))
+				SetPc(static_cast<uint16_t>(GetPc() + offset));
+			break;
+		}
+
+		case 0x30: // JR NC, e
+		{
+			const int8_t offset = static_cast<int8_t>(FetchByte());
+			if (!GetFlag(FLAG_C))
+				SetPc(static_cast<uint16_t>(GetPc() + offset));
+			break;
+		}
+
+		case 0x38: // JR C, e
+		{
+			const int8_t offset = static_cast<int8_t>(FetchByte());
+			if (GetFlag(FLAG_C))
+				SetPc(static_cast<uint16_t>(GetPc() + offset));
+			break;
+		}
+
+		case 0xCD: // CALL nn
+		{
+			const uint16_t addr = FetchWord();
+			const uint16_t returnAddress = GetPc();
+
+			// Push return address (high byte first)
+			SetSp(GetSp() - 1);
+			bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress >> 8));
+
+			SetSp(GetSp() - 1);
+			bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress & 0xFF));
+
+			SetPc(addr);
+			break;
+		}
+
+		case 0xC9: // RET
+		{
+			const uint8_t lo = bus_->Read(GetSp());
+			SetSp(GetSp() + 1);
+
+			const uint8_t hi = bus_->Read(GetSp());
+			SetSp(GetSp() + 1);
+
+			const uint16_t addr =
+				static_cast<uint16_t>(lo) |
+				(static_cast<uint16_t>(hi) << 8);
+
+			SetPc(addr);
+			break;
+		}
 
 		default:
 			// TODO :: For now, do nothing (we’ll tighten this later)

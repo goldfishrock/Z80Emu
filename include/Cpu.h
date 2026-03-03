@@ -69,6 +69,7 @@ class Cpu
 		void SetDe(std::uint16_t value) { de_ = value; }
 		void SetHl(std::uint16_t value) { hl_ = value; }
 		void SetSp(std::uint16_t value) { sp_ = value; }
+		void SetPc(std::uint16_t value) { pc_ = value; }
 
 	private:
 	    using Reg8Getter = uint8_t(Cpu::*)() const;

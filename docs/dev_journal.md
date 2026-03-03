@@ -409,6 +409,185 @@ This is the first step toward real program flow.
 
 ---
 
+## 🧭 Phase 9 – Control Flow Engine (JP / JR / CALL / RET)
+
+Today the emulator crossed a major architectural threshold.
+
+Until now, execution was linear.  
+With this phase, the CPU can now alter execution flow correctly and deterministically.
+
+This session implemented:
+
+- Absolute jumps
+- Relative jumps (signed displacement)
+- Conditional branching based on flags
+- Subroutine calls
+- Subroutine returns
+- Full integration between stack and program counter
+
+This is the first time the emulator behaves like a structured execution engine.
+
+---
+
+## ✅ What Landed
+
+### 🧭 Absolute Jump Instructions
+
+#### `JP nn` (0xC3)
+
+- Fetches 16-bit immediate address (little-endian)
+- Sets `PC = nn`
+- No flags modified
+- PC discipline verified via tests
+
+#### `JP (HL)` (0xE9)
+
+- No operand fetch
+- Direct register transfer: `PC = HL`
+- No flags modified
+- Verified no extra bytes consumed
+
+---
+
+### 🔁 Relative Jump Instructions (Signed Offset)
+
+#### `JR e` (0x18)
+
+- Fetches signed 8-bit displacement
+- Offset applied relative to the next instruction
+- Uses correct `int8_t` casting
+- Forward, backward and zero-offset cases tested
+
+This required careful PC arithmetic to ensure correctness.
+
+---
+
+### 🚦 Conditional Relative Jumps
+
+Implemented full JR conditional family:
+
+- `JR NZ, e` (0x20)
+- `JR Z, e`  (0x28)
+- `JR NC, e` (0x30)
+- `JR C, e`  (0x38)
+
+Correct behaviour:
+
+- Displacement byte is always fetched
+- Branch decision based on:
+  - `Cpu::FLAG_Z`
+  - `Cpu::FLAG_C`
+- If condition false → PC continues normally
+- If condition true → PC adjusted by signed offset
+- No flags modified by the instruction itself
+
+This is the first time flag logic directly controls execution flow.
+
+---
+
+### 📞 Subroutine Control
+
+#### `CALL nn` (0xCD)
+
+Implemented full Z80 behaviour:
+
+1. Fetch 16-bit immediate target
+2. Capture return address (post-fetch PC)
+3. Push return address to stack
+   - High byte first
+   - Then low byte
+4. Set `PC = target`
+
+Verified:
+
+- Correct little-endian immediate fetch
+- Correct push order (Z80 accurate)
+- Correct SP decrement behaviour
+- Correct return address calculation
+
+This instruction integrates PC, memory writes and stack mechanics.
+
+---
+
+### 🔙 Subroutine Return
+
+#### `RET` (0xC9)
+
+Implemented full stack pop semantics:
+
+1. Read low byte from stack
+2. Increment SP
+3. Read high byte
+4. Increment SP
+5. Combine bytes → restore PC
+
+Verified:
+
+- Correct pop order (low first)
+- SP incremented correctly (+2)
+- No flags modified
+- CALL → RET loop fully validated
+
+---
+
+## 🧪 Structural Improvements
+
+- Split control-flow tests into:
+  - `test_jp.cpp`
+  - `test_jr.cpp`
+  - `test_call_ret.cpp`
+- Standardised flag usage to `Cpu::FLAG_*`
+- Verified stack integration under control-flow conditions
+- Ensured displacement is always fetched (even when branch not taken)
+
+---
+
+## 🏆 Architectural Wins so far.....
+
+- 🚫 No switch explosion  
+- 🧮 Bitfield decoding (opcode-driven execution model)  
+- 🧠 Member-function dispatch for register access  
+- ♻️ Opcode-family handlers (LD / INC / DEC scalable design)  
+- 🧪 Clean Catch2 fixture pattern with isolated instruction testing  
+- 🧱 Deterministic ALU flag logic (S, Z, H, P/V, N, C verified)  
+- 📦 Stack abstraction (PUSH / POP / CALL / RET fully integrated)  
+- 🧭 Program Counter discipline (correct fetch sequencing + signed offsets)  
+- 🔁 Relative branching with signed displacement correctness  
+- 📞 Subroutine control flow fully operational  
+- 🧩 Cohesive control-flow engine (jumps + stack + flags working together)
+
+---
+
+## 🏗 Architectural Impact
+
+The emulator now supports:
+
+- Absolute branching
+- Relative branching
+- Conditional execution paths
+- Subroutine calls and returns
+- Nested flow control structures
+
+This is the first phase where the instruction set feels cohesive and capable of running structured programs.
+
+The CPU core is no longer just incrementally implemented —  
+it is now functionally expressive.
+
+---
+
+## ✅ Test Status
+
+- 76+ passing tests
+- 0 failures
+- Control flow verified
+- Signed offset behaviour verified
+- Stack + flow integration verified
+- Little-endian behaviour verified
+
+
+---
+
+
 
 # 🧪 Testing Strategy
 
@@ -519,100 +698,122 @@ Correct Z80 behaviour:
 
 ---
 
-## 🏆 Architectural Wins
+---
 
-- 🚫 No switch explosion  
-- 🧮 Bitfield decoding  
-- 🧠 Member-function dispatch  
-- ♻️ Opcode-family handlers (INC/DEC scalable)  
-- 🧪 Clean Catch2 fixture pattern  
-- 🧱 Deterministic ALU flag logic  
-- 📦 Stack abstraction now unlocks real program flow  
+### 🧭 Control Flow (Phase 9)
+
+#### Absolute Jumps
+- JP nn (0xC3)
+- JP (HL) (0xE9)
+
+Correct Z80 behaviour:
+- 16-bit little-endian immediate fetch
+- Direct PC register transfer for JP (HL)
+- No flags modified
+
 
 ---
 
-## 🧪 Test Status
+#### Relative Jumps
+- JR e (0x18)
+- JR NZ, e (0x20)
+- JR Z, e  (0x28)
+- JR NC, e (0x30)
+- JR C, e  (0x38)
 
-- 60 passing tests  
-- 0 failures  
-- Instruction-level isolation  
-- Flag behaviour verified explicitly  
-- Stack correctness verified (SP movement + memory order) 
+Correct Z80 behaviour:
+- Signed 8-bit displacement (int8_t casting)
+- Offset applied relative to next instruction
+- Displacement always fetched (even if branch not taken)
+- Conditional variants evaluate Cpu::FLAG_Z and Cpu::FLAG_C
+- No flags modified
+
 
 ---
 
+#### Subroutine Control
+- CALL nn (0xCD)
+- RET (0xC9)
+
+Correct Z80 behaviour:
+- CALL pushes return address (high byte first)
+- Stack grows downward
+- RET pops low then high byte
+- SP adjusted correctly (±2)
+- No flags modified
+
+---
 
 # 🔮 Where This Is Heading
 
 ## ➕ Next Logical Steps
 
-### 🧮 Full Arithmetic Group (8-bit)
-- ADD A,r  
-- ADD A,n  
-- SUB r  
-- SUB n  
-- ADC  
-- SBC  
+### 🧷 Conditional Returns
+- RET NZ (0xC0)
+- RET Z  (0xC8)
+- RET NC (0xD0)
+- RET C  (0xD8)
 
-These will complete the core 8-bit arithmetic engine.
+Extends the existing CALL/RET infrastructure with flag-based control flow.
 
 ---
 
-### 🧮 16-bit Arithmetic Completion
-- ADD HL,rr  
-- INC rr  
-- DEC rr  
+### 📞 Conditional CALL Instructions
+- CALL NZ,nn
+- CALL Z,nn
+- CALL NC,nn
+- CALL C,nn
+
+These complete subroutine-level branching and integrate stack + flag logic further.
+
+---
+
+### 🔁 DJNZ (Loop Control)
+- DJNZ e
+
+First instruction combining:
+- Register decrement
+- Conditional relative jump
+- Tight loop semantics
 
 ---
 
 ### 🧷 Remaining Flag Instructions
-- DAA (BCD adjust — subtle and important)
-- CPL
-- CCF
+- CCF (Complement Carry Flag)
+- CPL (Complement Accumulator)
+- DAA (Decimal Adjust Accumulator — subtle and correctness-critical)
+
+These tighten full flag compliance.
 
 ---
 
-### 🧠 Shifts / Rotates / Bit Ops
+### 🧠 CB Prefix Group (Bit / Rotate / Shift)
+
 - RLCA, RRCA, RLA, RRA  
-- CB-prefix group:
-  - RLC / RRC / RL / RR  
-  - SLA / SRA / SRL  
-  - BIT / SET / RES  
+- RLC / RRC / RL / RR  
+- SLA / SRA / SRL  
+- BIT / SET / RES  
 
-Major milestone once CB group lands.
-
----
-
-### 🧵 Subroutines & Control Flow
-- CALL nn  
-- RET  
-- RST n  
-- Conditional CALL/RET  
+Major architectural milestone once complete.
 
 ---
 
-### 🧭 Branching
-- JP nn  
-- JR e  
-- Conditional JP / JR  
-- DJNZ  
+### 🧨 Extended Prefix Groups
+
+- ED prefix (block instructions, extended arithmetic, I/O)
+- DD / FD prefixes (IX / IY + displacement handling)
+
+This introduces indexed addressing and more complex decoding paths.
 
 ---
 
-### 🧨 Prefix Instruction Sets
-- CB prefix (bit ops)
-- ED prefix (block ops, extended arithmetic, I/O)
-- DD / FD prefixes (IX / IY + displacement)
-
----
-
-### 🔌 I/O System
-- IN / OUT instructions  
+### 🔌 I/O Instructions
+- IN / OUT
 - Block I/O (ED-prefixed forms)
 
 ---
 
-### ⚡ Interrupts & CPU Modes
+### ⚡ Interrupt Handling
 - DI / EI  
 - IM 0 / 1 / 2  
 - HALT behaviour  
@@ -621,14 +822,14 @@ Major milestone once CB group lands.
 ---
 
 ### ⏱️ Timing & Accuracy
-- Per-instruction T-state modelling  
-- Taken vs not-taken cycle differences  
-- Prefix timing corrections  
-- Optional memory contention modelling  
+- Per-instruction T-state modelling
+- Taken vs not-taken cycle differences
+- Prefix timing corrections
+- Optional memory contention modelling
 
 ---
 
-### 🧱 Memory System (ROM / RAM Mapping)
+### 🧱 Memory System Evolution
 - Explicit ROM region (write-protected)
 - Explicit RAM region
 - Defined memory map
@@ -638,4 +839,3 @@ Major milestone once CB group lands.
 
 ---
 
-Line by line... it's becomming a full Z80 core.
