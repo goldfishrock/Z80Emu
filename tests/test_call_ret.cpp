@@ -93,3 +93,202 @@ TEST_CASE_METHOD(CpuFixture, "RET (0xC9) pops address and sets PC", "[flow][ret]
     REQUIRE(cpu.GetPc() == 0x1234);
     REQUIRE(cpu.GetSp() == 0xFFFE);
 }
+
+// **********************************************
+// *      RET NZ      ::    OP CODE: 0xC0       *
+// **********************************************
+// *                                            *
+// *   Return when the Zero flag is clear       *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET NZ (0xC0) returns when Z flag is clear", "[flow][ret][conditional]")
+{
+    // Arrange
+    bus.Write(0x0000, 0xC0);  // RET NZ
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_Z, false);
+
+    // Simulate return address 0x1234 on stack
+    bus.Write(0xFFFC, 0x34); // low
+    bus.Write(0xFFFD, 0x12); // high
+
+    // Act
+    cpu.Step();
+
+    // Assert
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFE);
+}
+
+// **********************************************
+// *      RET NZ      ::    OP CODE: 0xC0       *
+// **********************************************
+// *                                            *
+// *   Does not return when Z flag is set       *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET NZ (0xC0) does not return when Z flag is set", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xC0);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_Z, true);
+
+    // Dummy return address (should never be used)
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x0001);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+}
+
+
+// **********************************************
+// *      RET Z       ::    OP CODE: 0xC8       *
+// **********************************************
+// *                                            *
+// *     Return when Z flag is set              *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET Z (0xC8) returns when Z flag is set", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xC8);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_Z, true);
+
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFE);
+}
+
+
+// **********************************************
+// *      RET Z       ::    OP CODE: 0xC8       *
+// **********************************************
+// *                                            *
+// *   Does not return when Z flag is clear     *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET Z (0xC8) does not return when Z flag is clear", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xC8);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_Z, false);
+
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x0001);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+}
+
+// **********************************************
+// *      RET NC      ::    OP CODE: 0xD0       *
+// **********************************************
+// *                                            *
+// *     Returns when C flag is clear           *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET NC (0xD0) returns when C flag is clear", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xD0);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_C, false);
+
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFE);
+}
+
+// **********************************************
+// *      RET NC      ::    OP CODE: 0xD0       *
+// **********************************************
+// *                                            *
+// *    Does not return when C flag is set      *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET NC (0xD0) does not return when C flag is set", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xD0);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_C, true);
+
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x0001);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+}
+
+// **********************************************
+// *      RET C       ::    OP CODE: 0xD8       *
+// **********************************************
+// *                                            *
+// *      Returns when C flag is set            *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET C (0xD8) returns when C flag is set", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xD8);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_C, true);
+
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFE);
+}
+
+// **********************************************
+// *      RET C       ::    OP CODE: 0xD8       *
+// **********************************************
+// *                                            *
+// *   Does not return when C flag is clear     *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "RET C (0xD8) does not return when C flag is clear", "[flow][ret][conditional]")
+{
+    bus.Write(0x0000, 0xD8);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFC);
+    cpu.SetFlag(Cpu::FLAG_C, false);
+
+    bus.Write(0xFFFC, 0x34);
+    bus.Write(0xFFFD, 0x12);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x0001);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+}

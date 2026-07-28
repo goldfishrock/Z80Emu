@@ -169,7 +169,7 @@ void Cpu::PushByte(std::uint8_t value)
 
 std::uint8_t Cpu::FetchByte()
 {
-    //TODO :: (Decide how to handle “not connected” in a later step.)
+    //TODO :: (Decide how to handle ï¿½not connectedï¿½ in a later step.)
     const auto value = bus_->Read(pc_);
     pc_++;
     return value;
@@ -251,5 +251,13 @@ uint8_t Cpu::Dec8(uint8_t v)
 	// C unchanged
 
 	return r;
+}
+
+void Cpu::ExecConditionalRet(bool condition)
+{
+    if (condition)
+    {
+        SetPc(ExecPop());
+    }
 }
 

@@ -177,12 +177,18 @@ No macro trickery. No hidden state mutation.
 
 #### Subroutine Control
 - `CALL nn` (0xCD)
+
 - `RET`     (0xC9)
+- `RET NZ`  (0xC0)
+- `RET Z`   (0xC8)
+- `RET NC`  (0xD0)
+- `RET C`   (0xD8)
 
 All control-flow instructions:
 - Correct little-endian handling
 - Proper signed displacement behaviour
 - Accurate stack interaction
+- Conditional subroutine returns
 - No unintended flag side-effects
 
 ---
@@ -194,7 +200,7 @@ All control-flow instructions:
 
 ### 🧪 Test Coverage
 
-- 76+ passing tests
+- 87+ passing tests
 - ALU flag behaviour verified
 - 16-bit half-carry verified
 - Stack byte order verified
@@ -236,10 +242,12 @@ What remains is depth, completeness and hardware accuracy.
 ## 🧭 Remaining Control Flow
 
 ### 📞 Conditional Subroutines
-- `RET NZ`, `RET Z`, `RET NC`, `RET C`
-- `CALL NZ,nn`, `CALL Z,nn`, `CALL NC,nn`, `CALL C,nn`
+- `CALL NZ,nn`
+- `CALL Z,nn`
+- `CALL NC,nn`
+- `CALL C,nn`
 
-Completes flag-driven subroutine branching.
+Conditional returns are now complete, leaving the conditional CALL family as the next logical extension to subroutine control.
 
 ---
 

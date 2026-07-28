@@ -100,7 +100,9 @@ class Cpu
 	    uint8_t Inc8(uint8_t v);
 	    uint8_t Dec8(uint8_t v);
 
-	    static constexpr std::array<Reg8Getter, 8> reg8Get = {
+        void ExecConditionalRet(bool condition);
+
+        static constexpr std::array<Reg8Getter, 8> reg8Get = {
 	    &Cpu::GetB, &Cpu::GetC, &Cpu::GetD, &Cpu::GetE, &Cpu::GetH, &Cpu::GetL, nullptr, &Cpu::GetA
 	    };
 

@@ -191,7 +191,7 @@ void Cpu::Step()
 {
 	uint8_t opcode = FetchByte();
 
-	// LD r,r' block (0x40–0x7F except 0x76 (HALT))
+	// LD r,r' block (0x40ï¿½0x7F except 0x76 (HALT))
 	// Used to cover the 49 'ld r,r' instructions.
 	if (opcode >= 0x40 && opcode <= 0x7F || opcode == 0x76)
 	{
@@ -405,8 +405,14 @@ void Cpu::Step()
 			break;
 		}
 
+		case 0xC0: ExecConditionalRet(!GetFlag(FLAG_Z)); break;
+		case 0xC8: ExecConditionalRet( GetFlag(FLAG_Z)); break;
+		case 0xD0: ExecConditionalRet(!GetFlag(FLAG_C)); break;
+		case 0xD8: ExecConditionalRet( GetFlag(FLAG_C)); break;
+
+
 		default:
-			// TODO :: For now, do nothing (we’ll tighten this later)
+			// TODO :: For now, do nothing (weï¿½ll tighten this later)
 			break;
 		}
 };

@@ -542,6 +542,126 @@ Verified:
 
 ---
 
+
+# 🧭 Phase 10 – Conditional Returns (RET cc)
+
+After a several-month break from the project, the first development session was deliberately spent re-familiarising myself with the emulator architecture before implementing any new functionality.
+
+The first task was to verify the integrity of the project:
+
+- ✅ Refreshed understanding of the CPU, Bus and Memory architecture
+- ✅ Reviewed opcode dispatch and register access design
+- ✅ Confirmed the Catch2 test structure
+- ✅ Built the project successfully using CMake and MSYS2
+- ✅ All existing tests passing before any code changes
+
+With a known-good baseline established, development continued using the usual **Test-Driven Development** approach.
+
+---
+
+## ✅ What Landed
+
+### 🧷 Conditional Return Instructions
+
+Implemented the complete conditional return family:
+
+- `RET NZ` (0xC0)
+- `RET Z`  (0xC8)
+- `RET NC` (0xD0)
+- `RET C`  (0xD8)
+
+Each instruction now correctly evaluates the required processor flag before deciding whether to return from the current subroutine.
+
+If the condition evaluates true:
+
+- Return address is popped from the stack.
+- Program Counter is restored.
+- Stack Pointer increases by two bytes.
+
+If the condition evaluates false:
+
+- Execution simply continues with the next instruction.
+- Stack Pointer remains unchanged.
+
+---
+
+## 🧪 Test Coverage
+
+Following the project's TDD philosophy, every instruction was implemented only after writing failing tests.
+
+For each conditional return instruction two behaviours were verified:
+
+- ✅ Condition true → return performed
+- ✅ Condition false → execution continues normally
+
+This added eight new tests covering:
+
+- Program Counter behaviour
+- Stack Pointer behaviour
+- Correct interaction with the Zero and Carry flags
+
+The complete conditional return family is now fully verified.
+
+---
+
+## ♻️ Small Architectural Refactor
+
+Once all four instructions had been implemented it became obvious that each opcode shared exactly the same behaviour apart from the condition being evaluated.
+
+Rather than duplicate the same stack handling four times, a new helper function was introduced:
+
+```cpp
+void Cpu::ExecConditionalRet(bool condition)
+{
+    if (condition)
+    {
+        SetPc(ExecPop());
+    }
+}
+```
+
+The opcode dispatcher now becomes much clearer:
+
+```cpp
+case 0xC0: ExecConditionalRet(!GetFlag(FLAG_Z)); break;
+case 0xC8: ExecConditionalRet( GetFlag(FLAG_Z)); break;
+case 0xD0: ExecConditionalRet(!GetFlag(FLAG_C)); break;
+case 0xD8: ExecConditionalRet( GetFlag(FLAG_C)); break;
+```
+
+This keeps `Cpu::Step()` acting purely as the instruction decoder while shared behaviour is encapsulated in reusable helper functions.
+
+The result is cleaner, easier to read and maintains the project's goal of eliminating unnecessary duplication wherever practical.
+
+---
+
+## 🏆 Architectural Wins
+
+- ✅ Complete conditional return instruction family
+- 🧪 Eight new unit tests
+- ♻️ Shared conditional return helper eliminates duplication
+- 🧠 Switch-based opcode decoder remains clean and readable
+- 📦 Existing stack abstraction (`ExecPop()`) successfully reused
+- 🚦 Flag-driven control flow extended without increasing architectural complexity
+
+---
+
+## 📈 Current Status
+
+The CPU now supports:
+
+- Unconditional jumps
+- Conditional relative jumps
+- Unconditional subroutine calls
+- Unconditional returns
+- Conditional returns
+
+The control-flow engine is now becoming a cohesive subsystem built from small, reusable components rather than individual opcode implementations.
+
+This session also reinforced that the architectural decisions made earlier in the project continue to scale well as additional instruction families are added.
+
+---
+
 ## 🏆 Architectural Wins so far.....
 
 - 🚫 No switch explosion  
