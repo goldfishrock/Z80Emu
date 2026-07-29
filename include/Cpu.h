@@ -102,6 +102,8 @@ class Cpu
 
         void ExecConditionalRet(bool condition);
 
+        void ExecConditionalCall(bool condition);
+
         static constexpr std::array<Reg8Getter, 8> reg8Get = {
 	    &Cpu::GetB, &Cpu::GetC, &Cpu::GetD, &Cpu::GetE, &Cpu::GetH, &Cpu::GetL, nullptr, &Cpu::GetA
 	    };

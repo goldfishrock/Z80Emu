@@ -2,6 +2,7 @@
 out/
 build/
 CMakeFiles/
+build-msys2/
 CMakeCache.txt
 
 # Visual Studio

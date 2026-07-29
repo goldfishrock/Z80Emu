@@ -373,22 +373,6 @@ void Cpu::Step()
 			break;
 		}
 
-		case 0xCD: // CALL nn
-		{
-			const uint16_t addr = FetchWord();
-			const uint16_t returnAddress = GetPc();
-
-			// Push return address (high byte first)
-			SetSp(GetSp() - 1);
-			bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress >> 8));
-
-			SetSp(GetSp() - 1);
-			bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress & 0xFF));
-
-			SetPc(addr);
-			break;
-		}
-
 		case 0xC9: // RET
 		{
 			const uint8_t lo = bus_->Read(GetSp());
@@ -410,6 +394,11 @@ void Cpu::Step()
 		case 0xD0: ExecConditionalRet(!GetFlag(FLAG_C)); break;
 		case 0xD8: ExecConditionalRet( GetFlag(FLAG_C)); break;
 
+		case 0xC4: ExecConditionalCall(!GetFlag(FLAG_Z)); break;
+		case 0xCD: ExecConditionalCall(true); break;
+		case 0xCC: ExecConditionalCall(GetFlag(FLAG_Z)); break;
+		case 0xD4: ExecConditionalCall(!GetFlag(FLAG_C)); break;
+		case 0xDC: ExecConditionalCall(GetFlag(FLAG_C)); break;
 
 		default:
 			// TODO :: For now, do nothing (we�ll tighten this later)

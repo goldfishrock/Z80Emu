@@ -261,3 +261,20 @@ void Cpu::ExecConditionalRet(bool condition)
     }
 }
 
+void Cpu::ExecConditionalCall(bool condition)
+{
+    const uint16_t addr = FetchWord();
+
+    if (!condition)
+        return;
+
+    const uint16_t returnAddress = GetPc();
+
+    SetSp(GetSp() - 1);
+    bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress >> 8));
+
+    SetSp(GetSp() - 1);
+    bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress & 0xFF));
+
+    SetPc(addr);
+}

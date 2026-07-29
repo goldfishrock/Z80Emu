@@ -653,12 +653,148 @@ The CPU now supports:
 - Unconditional jumps
 - Conditional relative jumps
 - Unconditional subroutine calls
+- Conditional subroutine calls
 - Unconditional returns
 - Conditional returns
 
 The control-flow engine is now becoming a cohesive subsystem built from small, reusable components rather than individual opcode implementations.
 
 This session also reinforced that the architectural decisions made earlier in the project continue to scale well as additional instruction families are added.
+
+---
+
+
+# 📞 Phase 11 – Conditional Calls (CALL cc,nn)
+
+This session completed the conditional `CALL` family and further strengthened the control-flow architecture.
+
+Development continued using the established Test-Driven Development cycle:
+
+1. Add one failing test.
+2. Confirm the expected failure.
+3. Implement the minimum opcode dispatch.
+4. Refactor shared behaviour where appropriate.
+5. Run the complete test suite before moving on.
+
+---
+
+## ✅ What Landed
+
+### 📞 Conditional CALL Instructions
+
+Implemented the complete Zero/Carry conditional call family:
+
+- `CALL NZ,nn` (0xC4)
+- `CALL Z,nn`  (0xCC)
+- `CALL NC,nn` (0xD4)
+- `CALL C,nn`  (0xDC)
+
+Each instruction now evaluates the relevant processor flag before deciding whether to call the target subroutine.
+
+If the condition is true:
+
+- The 16-bit target address is fetched.
+- The return address is captured after the operand fetch.
+- The return address is pushed onto the stack.
+- `SP` decreases by two bytes.
+- `PC` is updated to the target address.
+
+If the condition is false:
+
+- The two-byte target operand is still consumed.
+- Execution continues at the following instruction.
+- The stack is left unchanged.
+
+---
+
+## ♻️ CALL Refactor
+
+The original unconditional `CALL nn` implementation contained its own stack handling.
+
+To eliminate duplication, a shared helper was introduced:
+
+```cpp
+void Cpu::ExecConditionalCall(bool condition)
+{
+    const uint16_t addr = FetchWord();
+
+    if (!condition)
+        return;
+
+    const uint16_t returnAddress = GetPc();
+
+    SetSp(GetSp() - 1);
+    bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress >> 8));
+
+    SetSp(GetSp() - 1);
+    bus_->Write(GetSp(), static_cast<uint8_t>(returnAddress & 0xFF));
+
+    SetPc(addr);
+}
+```
+
+The opcode dispatcher is now concise and consistent:
+
+```cpp
+case 0xCD: ExecConditionalCall(true);               break;
+case 0xC4: ExecConditionalCall(!GetFlag(FLAG_Z));   break;
+case 0xCC: ExecConditionalCall( GetFlag(FLAG_Z));   break;
+case 0xD4: ExecConditionalCall(!GetFlag(FLAG_C));   break;
+case 0xDC: ExecConditionalCall( GetFlag(FLAG_C));   break;
+```
+
+This keeps the instruction decoder focused on opcode selection while the complete CALL behaviour lives in one reusable helper.
+
+---
+
+## 🧪 Test Coverage
+
+Added focused tests covering:
+
+- Unconditional `CALL nn`
+- `CALL NZ,nn` with Zero clear
+- `CALL Z,nn` with Zero set
+- `CALL NC,nn` with Carry clear
+- `CALL C,nn` with Carry set
+
+The tests verify:
+
+- Correct target address
+- Correct return address
+- Correct stack pointer movement
+- Correct stack byte order
+- Correct flag-driven execution
+
+The complete suite now reports:
+
+**92 passing tests, 0 failures**
+
+---
+
+## 🏆 Architectural Wins
+
+- ✅ Complete conditional CALL family
+- ♻️ Shared `ExecConditionalCall()` helper
+- 📦 Existing stack behaviour reused cleanly
+- 🧠 Opcode dispatch remains compact
+- 🧪 Regression coverage for unconditional `CALL nn`
+- 🚦 Flag-driven subroutine control now complete for Zero and Carry
+- ✅ Full suite remains green
+
+---
+
+## 📈 Current Status
+
+The CPU now supports:
+
+- Unconditional jumps
+- Conditional relative jumps
+- Unconditional calls
+- Conditional calls
+- Unconditional returns
+- Conditional returns
+
+The CALL/RET subsystem is now a cohesive, reusable part of the emulator rather than a collection of isolated opcode implementations.
 
 ---
 
@@ -697,7 +833,7 @@ it is now functionally expressive.
 
 ## ✅ Test Status
 
-- 76+ passing tests
+- 92 passing tests
 - 0 failures
 - Control flow verified
 - Signed offset behaviour verified
@@ -853,6 +989,10 @@ Correct Z80 behaviour:
 
 #### Subroutine Control
 - CALL nn (0xCD)
+- CALL NZ,nn (0xC4)
+- CALL Z,nn  (0xCC)
+- CALL NC,nn (0xD4)
+- CALL C,nn  (0xDC)
 - RET (0xC9)
 
 Correct Z80 behaviour:
@@ -875,16 +1015,6 @@ Correct Z80 behaviour:
 - RET C  (0xD8)
 
 Extends the existing CALL/RET infrastructure with flag-based control flow.
-
----
-
-### 📞 Conditional CALL Instructions
-- CALL NZ,nn
-- CALL Z,nn
-- CALL NC,nn
-- CALL C,nn
-
-These complete subroutine-level branching and integrate stack + flag logic further.
 
 ---
 

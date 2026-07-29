@@ -176,7 +176,11 @@ No macro trickery. No hidden state mutation.
 - `JR C,e`  (0x38)
 
 #### Subroutine Control
-- `CALL nn` (0xCD)
+- `CALL nn`    (0xCD)
+- `CALL NZ,nn` (0xC4)
+- `CALL Z,nn`  (0xCC)
+- `CALL NC,nn` (0xD4)
+- `CALL C,nn`  (0xDC)
 
 - `RET`     (0xC9)
 - `RET NZ`  (0xC0)
@@ -188,7 +192,7 @@ All control-flow instructions:
 - Correct little-endian handling
 - Proper signed displacement behaviour
 - Accurate stack interaction
-- Conditional subroutine returns
+- Conditional subroutine calls and returns
 - No unintended flag side-effects
 
 ---
@@ -200,7 +204,7 @@ All control-flow instructions:
 
 ### 🧪 Test Coverage
 
-- 87+ passing tests
+- 92 passing tests
 - ALU flag behaviour verified
 - 16-bit half-carry verified
 - Stack byte order verified
@@ -240,16 +244,6 @@ What remains is depth, completeness and hardware accuracy.
 ---
 
 ## 🧭 Remaining Control Flow
-
-### 📞 Conditional Subroutines
-- `CALL NZ,nn`
-- `CALL Z,nn`
-- `CALL NC,nn`
-- `CALL C,nn`
-
-Conditional returns are now complete, leaving the conditional CALL family as the next logical extension to subroutine control.
-
----
 
 ### 🔁 Loop Control
 - `DJNZ e`

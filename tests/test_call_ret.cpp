@@ -292,3 +292,133 @@ TEST_CASE_METHOD(CpuFixture, "RET C (0xD8) does not return when C flag is clear"
     REQUIRE(cpu.GetPc() == 0x0001);
     REQUIRE(cpu.GetSp() == 0xFFFC);
 }
+
+// **********************************************
+// *      CALL NZ,nn   ::   OP CODE: 0xC4       *
+// **********************************************
+// *                                            *
+// *   Calls when the Zero flag is clear        *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "CALL NZ,nn (0xC4) calls when Z flag is clear", "[flow][call][conditional]")
+{
+    // 0000: C4 34 12   CALL NZ,0x1234
+    bus.Write(0x0000, 0xC4);
+    bus.Write(0x0001, 0x34);
+    bus.Write(0x0002, 0x12);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFE);
+    cpu.SetFlag(Cpu::FLAG_Z, false);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+    REQUIRE(bus.Read(0xFFFD) == 0x00); // return address high byte
+    REQUIRE(bus.Read(0xFFFC) == 0x03); // return address low byte
+}
+
+// **********************************************
+// *        CALL nn    ::   OP CODE: 0xCD       *
+// **********************************************
+// *                                            *
+// *   Unconditional subroutine call            *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "CALL nn (0xCD) calls unconditionally", "[flow][call]")
+{
+    // 0000: CD 34 12   CALL 0x1234
+    bus.Write(0x0000, 0xCD);
+    bus.Write(0x0001, 0x34);
+    bus.Write(0x0002, 0x12);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFE);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+    REQUIRE(bus.Read(0xFFFD) == 0x00); // return address high byte
+    REQUIRE(bus.Read(0xFFFC) == 0x03); // return address low byte
+}
+
+// **********************************************
+// *      CALL NC,nn   ::   OP CODE: 0xD4       *
+// **********************************************
+// *                                            *
+// *   Calls when the Carry flag is clear       *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "CALL NC,nn (0xD4) calls when C flag is clear", "[flow][call][conditional]")
+{
+    // 0000: D4 34 12   CALL NC,0x1234
+    bus.Write(0x0000, 0xD4);
+    bus.Write(0x0001, 0x34);
+    bus.Write(0x0002, 0x12);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFE);
+    cpu.SetFlag(Cpu::FLAG_C, false);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+    REQUIRE(bus.Read(0xFFFD) == 0x00);
+    REQUIRE(bus.Read(0xFFFC) == 0x03);
+}
+
+// **********************************************
+// *       CALL Z,nn   ::   OP CODE: 0xCC       *
+// **********************************************
+// *                                            *
+// *   Calls when the Zero flag is set          *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "CALL Z,nn (0xCC) calls when Z flag is set", "[flow][call][conditional]")
+{
+    // 0000: CC 34 12   CALL Z,0x1234
+    bus.Write(0x0000, 0xCC);
+    bus.Write(0x0001, 0x34);
+    bus.Write(0x0002, 0x12);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFE);
+    cpu.SetFlag(Cpu::FLAG_Z, true);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+    REQUIRE(bus.Read(0xFFFD) == 0x00); // return address high byte
+    REQUIRE(bus.Read(0xFFFC) == 0x03); // return address low byte
+}
+
+// **********************************************
+// *       CALL C,nn   ::   OP CODE: 0xDC       *
+// **********************************************
+// *                                            *
+// *   Calls when the Carry flag is set         *
+// *                                            *
+// **********************************************
+TEST_CASE_METHOD(CpuFixture, "CALL C,nn (0xDC) calls when C flag is set",
+                 "[flow][call][conditional]")
+{
+    // 0000: DC 34 12   CALL C,0x1234
+    bus.Write(0x0000, 0xDC);
+    bus.Write(0x0001, 0x34);
+    bus.Write(0x0002, 0x12);
+
+    cpu.SetPc(0x0000);
+    cpu.SetSp(0xFFFE);
+    cpu.SetFlag(Cpu::FLAG_C, true);
+
+    cpu.Step();
+
+    REQUIRE(cpu.GetPc() == 0x1234);
+    REQUIRE(cpu.GetSp() == 0xFFFC);
+    REQUIRE(bus.Read(0xFFFD) == 0x00); // return address high byte
+    REQUIRE(bus.Read(0xFFFC) == 0x03); // return address low byte
+}
