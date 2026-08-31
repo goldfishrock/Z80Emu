@@ -2,20 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Z80Emu (WSL gdb)",
-      "type": "cppdbg",
+      "name": "Debug Z80Emu",
+      "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/Z80Emu",
+      "program": "${workspaceFolder}\\build\\Debug\\Z80Emu.exe",
       "cwd": "${workspaceFolder}",
       "args": [],
       "stopAtEntry": false,
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "miDebuggerPath": "/usr/bin/gdb",
-      "preLaunchTask": "Build Z80Emu (WSL g++)",
-      "setupCommands": [
-        { "text": "-enable-pretty-printing", "ignoreFailures": true }
-      ]
+      "console": "integratedTerminal",
+      "preLaunchTask": "Build Z80Emu"
     }
   ]
 }

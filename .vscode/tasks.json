@@ -4,16 +4,18 @@
     {
       "label": "Build Z80Emu",
       "type": "shell",
-      "command": "C:\\msys64\\ucrt64\\bin\\cmake.exe",
+      "command": "cmake",
       "args": [
         "--build",
-        "build-msys2"
+        "build",
+        "--config",
+        "Debug"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
       "problemMatcher": [
-        "$gcc"
+        "$msCompile"
       ],
       "group": {
         "kind": "build",
@@ -21,12 +23,26 @@
       }
     },
     {
+      "label": "Run Z80Emu",
+      "type": "shell",
+      "command": "${workspaceFolder}\\build\\Debug\\Z80Emu.exe",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "dependsOn": [
+        "Build Z80Emu"
+      ]
+    },
+    {
       "label": "Run Z80 tests",
       "type": "shell",
-      "command": "C:\\msys64\\ucrt64\\bin\\ctest.exe",
+      "command": "ctest",
       "args": [
         "--test-dir",
-        "build-msys2",
+        "build",
+        "-C",
+        "Debug",
         "--output-on-failure"
       ],
       "options": {
