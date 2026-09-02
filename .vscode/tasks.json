@@ -3,7 +3,7 @@
   "tasks": [
     {
       "label": "Build Z80Emu",
-      "type": "shell",
+      "type": "process",
       "command": "cmake",
       "args": [
         "--build",
@@ -24,7 +24,7 @@
     },
     {
       "label": "Run Z80Emu",
-      "type": "shell",
+      "type": "process",
       "command": "${workspaceFolder}\\build\\Debug\\Z80Emu.exe",
       "options": {
         "cwd": "${workspaceFolder}"
@@ -36,7 +36,7 @@
     },
     {
       "label": "Run Z80 tests",
-      "type": "shell",
+      "type": "process",
       "command": "ctest",
       "args": [
         "--test-dir",
